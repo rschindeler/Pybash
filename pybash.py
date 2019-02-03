@@ -57,7 +57,7 @@ class pybash(pybash_cmd, pybash_parser):
         # Combine cmd if list and perform parameter subsitution
         if type(cmd) == list:
             cmd = " ".join(cmd)
-        #cmd = self.parameter_expansion(cmd)
+        cmd = self.parameter_expansion(cmd)
        
         self.write_debug("SHELL: %s" % cmd, "run_shell_cmd")
         self.write_debug("INPUT: %s" % (stdin if type(stdin) == file else type(stdin)), "run_shell_cmd")
@@ -238,6 +238,8 @@ class pybash(pybash_cmd, pybash_parser):
     # Function to execute a single shell or python command 
     # i.e. a command that does not contain a pipeline
     def run_cmd(self, cmd, std_pipe=None, input_data=None, stdout_pipe=None, stderr_pipe=None, last_cmd=False):
+        ############################################################################
+        # Step 1) Validate and standardize input variables
         # If std_pipe was provided, check length
         if std_pipe:
             if len(std_pipe) != 3:
@@ -252,6 +254,8 @@ class pybash(pybash_cmd, pybash_parser):
             std_pipe[0] = pybash_util.expand_deque_input(std_pipe[0])
             self.write_debug("Replaced deque with: %s" % std_pipe[0])
         
+        ############################################################################
+        # Step 2) Prepare the command string
         # Split cmd by space, make sure it has at least one element
         cmd = cmd.strip()
         cmd_parts = cmd.split()
@@ -272,7 +276,8 @@ class pybash(pybash_cmd, pybash_parser):
         cmd = " ".join(cmd_parts)
         cmd_parts = cmd.split()
 
-        # Check to see if this is a shell or python command
+        ############################################################################
+        # Step 3) Check to see if this is a shell or python command and execute
         # a) Check to see if this command contains known pybash helper functions
         helper_functions = pybash_helper.function_match(cmd)
         if helper_functions:
@@ -295,7 +300,8 @@ class pybash(pybash_cmd, pybash_parser):
             return self.run_python_cmd(cmd, std_pipe=std_pipe)
         
         # b) Check to see if the first element of cmd is a known shell function
-        elif cmd_parts[0] in self.shell_cmds:
+        #   - exclude python keywords such as import (which may also be valid shell commands)
+        elif cmd_parts[0] in self.shell_cmds and not pybash_helper.python_keyword_match(cmd_parts[0]):
             # If input data is provided, format special variable types for shell compatibility
             std_pipe[0] = pybash_util.shell_data(std_pipe[0])
             return self.run_shell_cmd(cmd, std_pipe=std_pipe) 
@@ -412,15 +418,35 @@ class pybash(pybash_cmd, pybash_parser):
     
     # Function to get all available shell commands and store them in a searchable hash
     def available_shell_cmds(self):
+        # Execute compgen to get all commands
         s, e, p = self.run_shell_cmd("compgen -A function -ack", stdout_pipe=subprocess.PIPE)
-        self.write_debug("reading %s" % s)
         cmd_list_str = pybash_util.read_close_fd(s)
-        cmd_list = cmd_list_str.split()
-        shell_cmds = {}
+        cmd_list = cmd_list_str.split(os.linesep)
+        # Store in special hash
+        self.shell_cmds = {}
         for c in cmd_list:
-           shell_cmds[c] = 1
-        self.write_debug("Loaded %i shell commands" % len(shell_cmds), "available_shell_cmds")
-        return shell_cmds
+           self.shell_cmds[c] = 1
+        self.write_debug("Loaded %i shell commands" % len(self.shell_cmds), "available_shell_cmds")
+
+    # Function to load all environment varaibles from default shell
+    def initialize_environment_variables(self):
+        # Execute printenv to get all environment variables
+        s, e, p = self.run_shell_cmd("printenv", stdout_pipe=subprocess.PIPE)
+        env_list_str = pybash_util.read_close_fd(s)
+        env_list = env_list_str.split(os.linesep)
+        # Store each in self.locals hash
+        for v in env_list:
+            # Skip empty lines
+            if not v:
+                continue
+            # Separate into key/value
+            parts = v.split('=')
+            if not len(parts) >= 2:
+                self.write_debug("Failed to load environment line: %s" % v)
+                continue
+            key = parts[0]
+            val = "=".join(parts[1:])
+            self.locals[key] = val
 
 
     # Function to get all shell aliases

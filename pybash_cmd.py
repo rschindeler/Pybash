@@ -51,7 +51,10 @@ class pybash_cmd(Cmd):
         exec('import pybash_helper', self.globals, self.locals)
 
         # Initialize the list of commands and aliases available in the user's shell
-    	self.shell_cmds = self.available_shell_cmds()
+    	self.available_shell_cmds()
+
+        # Initialize environment variables
+        self.initialize_environment_variables()
 
         # Set default prompt
         self.update_prompt()

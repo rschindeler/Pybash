@@ -8,7 +8,7 @@
 import yaml
 import readline
 import sys
-
+import keyword
 
 # Function used by pybash to determine if a command is a pybash_helper function
 def function_match(s):
@@ -18,6 +18,10 @@ def function_match(s):
         if f in s:
             found.append(f)
     return found
+
+# Function to check if a command is a python keyword
+def python_keyword_match(c):
+    return keyword.iskeyword(c)
 
 # Functions for converting strings to dict/list
 def to_list(s):
