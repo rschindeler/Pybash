@@ -15,13 +15,7 @@ from pybash_cmd import pybash_cmd
 from pybash_parser import pybash_parser
 
 # TODO List:
-# Bash shortcuts that don't work:
-#   cd -
-#   !!
-#   cd !$
-#   ~
 # Bash special variables: https://www.mylinuxplace.com/bash-special-variables/
-# Bash varaible expansion: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
 #
 # import statements don't work 
 
@@ -55,12 +49,15 @@ class pybash(pybash_cmd, pybash_parser):
     def run_shell_cmd(self, cmd, std_pipe=None, stdin=None, stdout_pipe=None, stderr_pipe=None):
         # Expand std_pipe, create pipes, handle redirects
         stdin,stdout_pipe,stderr_pipe = pybash_util.expand_std_pipe(std_pipe, stdin, stdout_pipe, stderr_pipe, use_pipe=True)
-        self.write_debug("Expanded std_pipe: %s" % [stdin, stdout_pipe, stderr_pipe], "run_shell_cmd")
+        if std_pipe:
+            #pipe_display = [pybash_util.display_std_pipe(p) for p in [stdin, stdout_pipe, stderr_pipe]]
+            pipe_display = pybash_util.display_std_pipe([stdin, stdout_pipe, stderr_pipe])
+            self.write_debug("Expanded std_pipe: %s" % pipe_display, "run_shell_cmd")
 
         # Combine cmd if list and perform parameter subsitution
         if type(cmd) == list:
             cmd = " ".join(cmd)
-        cmd = self.parameter_expansion(cmd)
+        #cmd = self.parameter_expansion(cmd)
        
         self.write_debug("SHELL: %s" % cmd, "run_shell_cmd")
         self.write_debug("INPUT: %s" % (stdin if type(stdin) == file else type(stdin)), "run_shell_cmd")
