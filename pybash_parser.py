@@ -100,7 +100,7 @@ class pybash_parser():
             pybash_util.remove_history_item(last_line)
             readline.add_history(cmd)
             # Print the resulting cmd to stdout (bash does this!)
-            sys.stdout.write(cmd + "\n") 
+            self.stdout_write(cmd) 
         
         # Done parsing, return modified command
         return cmd
