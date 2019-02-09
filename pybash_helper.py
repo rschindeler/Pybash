@@ -19,7 +19,7 @@ def function_match(s):
             found.append(f)
     return found
 
-# Function to check if a command is a python keyword
+# Function used by pybash to check if a command is a python keyword
 def python_keyword_match(c):
     return keyword.iskeyword(c)
 

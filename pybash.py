@@ -14,12 +14,6 @@ import pybash_helper, pybash_util
 from pybash_cmd import pybash_cmd
 from pybash_parser import pybash_parser
 
-# TODO List:
-# Bash special variables: https://www.mylinuxplace.com/bash-special-variables/
-#
-# import statements don't work 
-
-
 # Future enhancements:
 #  - allow "streaming" execution of python commands
 
@@ -27,22 +21,33 @@ from pybash_parser import pybash_parser
 #        - would wait for the input deque to be None (same as a file-like object being 'closed')
 
 
+
+# Main class of the pybash interpreter which handles the execution of commands
+# Command execution flow:
+#    a) the cmd.Cmd.precmd() function is executed which will expand bash-like designators
+#    b) cmd.Cmd checks for special pybash commands such as cd, history
+#    c) the cmd.Cmd.default() function is executed if no special commands were found, kicking off
+#       the main pybash command parsing function: run_pipeline() 
+#    d) run_pipeline() splits the input line by '|' and kicks off the execution of each stage of 
+#       the pipeline
+#         - the standard pipe is initiated and managed by this function
+#         - redirect parsing is done for each stage
+#    e) each stage of the pipeline is processed using the run_cmd() function
+#         - pre-processes the command (aliases) and input variables
+#         - run_cmd() will call run_shell_cmd() or run_python_cmd() as appropriate
+#    f) run_pipeline() gets the results fo run_shell_cmd() / run_python_cmd()
+#         - outputs will be passed to the next stage in the pipeline
+#         - if this is the last stage, any open file handles are closed and assignment to
+#           python variables is performed
 class pybash(pybash_cmd, pybash_parser):
-    
 
-
-    ####################################################################################
-    # COMMAND EXECUTION FUNCTIONS
-    ####################################################################################
-    
-    
-    
     # Function to execute a shell command, accepting stdin and returning stdout / stderr
     #    If stdin is not None:
     #        - if type(stdin) == file, then it will be passed to subprocess.Popen()
     #        - if not, it is written to the process's stin after subprocess.Popen() is called 
     #    If stdout_pipe / stderr_pipe are subprocess.PIPE, they are passed to subprocess.Popen
     #        - if not. the subprocess will print its stdout / stderr to terminal
+    #    The std_pipe list can be used in-place of [stdin, stdout_pipe, stderr_pipe]
     #
     #    Returns: stdout file handle, stderr file handel, process
     #           - if stdout_pipe / stderr_pipe are None, these file handels are None
@@ -50,7 +55,6 @@ class pybash(pybash_cmd, pybash_parser):
         # Expand std_pipe, create pipes, handle redirects
         stdin,stdout_pipe,stderr_pipe = pybash_util.expand_std_pipe(std_pipe, stdin, stdout_pipe, stderr_pipe, use_pipe=True)
         if std_pipe:
-            #pipe_display = [pybash_util.display_std_pipe(p) for p in [stdin, stdout_pipe, stderr_pipe]]
             pipe_display = pybash_util.display_std_pipe([stdin, stdout_pipe, stderr_pipe])
             self.write_debug("Expanded std_pipe: %s" % pipe_display, "run_shell_cmd")
 
@@ -110,6 +114,13 @@ class pybash(pybash_cmd, pybash_parser):
         
 
     # Function to execute a python command, accepting an input variable and returning and output variable + error 
+    #    If input_var is a file, it will read, converted to a string and closed
+    #    The std_pipe list can be used in-place of [stdin, stdout_pipe, stderr_pipe]
+    #
+    #    Returns [stdout, stderr, None]
+    #    Where:
+    #       - stdout is either the result of a python command or the stdout printed by the command
+    #       - stderr is the stderr printed by the command
     def run_python_cmd(self, cmd, std_pipe=None, input_var=None, stdout_pipe=None, stderr_pipe=None):
         # Expand the std_pipe, handel redirects
         input_var,stdout_pipe,stderr_pipe = pybash_util.expand_std_pipe(std_pipe, input_var, stdout_pipe, stderr_pipe)
@@ -193,8 +204,6 @@ class pybash(pybash_cmd, pybash_parser):
             stdout_src_list = [None, stdout_val]
 
         stderr_src_list = [stderr_val]
-        #self.write_debug("stdout_src_list: %s" % stdout_src_list, "run_python_cmd")
-        #self.write_debug("stderr_src_list: %s" % stderr_src_list, "run_python_cmd")
         
         # Define the mappings between the (name, output pipe, output print function, output source list)
         output_mapping =  [("stdout", stdout_pipe, self.stdout_write, stdout_src_list), 
@@ -480,7 +489,6 @@ class pybash(pybash_cmd, pybash_parser):
         
     # Perform event designator expansion before parsing line
     def precmd(self, line):
-        # b) Check for event and word designator
         try:
             line = self.expand_designators(line)
         except Exception as e:
@@ -488,13 +496,8 @@ class pybash(pybash_cmd, pybash_parser):
             self.write_debug(traceback.format_exc())
         return line
 
+# Launch main loop
 if __name__ == "__main__":
-    #pb = pybash()
-    #pb.preloop()
-    #s,e,p = pb.run_shell_cmd("vim")
-    #s,e,p = pb.run_cmd("vim")
-    #p.wait()
-    #pb.default("vim")
     pybash().cmdloop()
 
 
