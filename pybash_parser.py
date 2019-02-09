@@ -94,11 +94,13 @@ class pybash_parser():
         
         # Done parsing - edit history if required
         if expansion_performed:
-            # Replace most recent line
+            # Replace most recent line in history
             last_line = readline.get_current_history_length()
             self.write_debug("Repalcing most recent history line %i" % last_line)
             pybash_util.remove_history_item(last_line)
             readline.add_history(cmd)
+            # Print the resulting cmd to stdout (bash does this!)
+            sys.stdout.write(cmd + "\n") 
         
         # Done parsing, return modified command
         return cmd
