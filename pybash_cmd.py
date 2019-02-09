@@ -7,10 +7,12 @@ import traceback
 import argparse
 import pybash_util
 
+from pybash_io import pybash_io
+
 # The pybash_cmd class forms the basis of the terminal interface 
 #    - based on the cmd.Cmd class
 #    - custom functions: cd, exit, sudo, set, show
-class pybash_cmd(Cmd):
+class pybash_cmd(Cmd, pybash_io):
     ####################################################################################
     # DEFINITIONS
     ####################################################################################
@@ -191,28 +193,6 @@ class pybash_cmd(Cmd):
     # UTILITY FUNCTIONS
     ##############################################################################
 
-    # Functions to write to stdout and stderr
-    def stdout_write(self, msg, print_line=True):
-        if msg:
-            sys.stdout.write(str(msg))
-            if print_line:
-                sys.stdout.write("\n")
-    def stderr_write(self, msg, print_line=True):
-        if msg:
-            sys.stderr.write(str(msg))
-            if print_line:
-                sys.stderr.write("\n")
-    def print_error(self, text):
-        self.stderr_write("-pybash: %s" % text)
-    
-    def write_debug(self, msg, fn=None):
-        if self.cmd_flags['debug']:
-            fn_str = str(fn) + "() - " if fn else ""
-            if type(msg) == list:
-                for m in msg:
-                    self.stdout_write("[DEBUG] " + fn_str + str(m))
-            else:
-                self.stdout_write("[DEBUG] " + fn_str + str(msg))
    
     # Function to update the prompt to the current working directory
     def update_prompt(self):
