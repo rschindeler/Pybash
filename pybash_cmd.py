@@ -12,6 +12,7 @@ from pybash_io import pybash_io
 # The pybash_cmd class forms the basis of the terminal interface 
 #    - based on the cmd.Cmd class
 #    - custom functions: cd, exit, sudo, set, show
+#    - extends pybash_io for stdout / stderr printing functions
 class pybash_cmd(Cmd, pybash_io):
     ####################################################################################
     # DEFINITIONS
@@ -42,7 +43,7 @@ class pybash_cmd(Cmd, pybash_io):
                'fgrep': {-1: 'fgrep --color=auto'}}
 
     ####################################################################################
-    # OVERRIDE CMD.CMD FUNCTIONS
+    # OVERRIDE CMD.CMD LOOP FUNCTIONS
     ####################################################################################
 
     # This function is called when the terminal prompt loop is first entered
@@ -71,15 +72,186 @@ class pybash_cmd(Cmd, pybash_io):
         # Print banner
         self.stdout_write(self.banner)
 
+    # Override emptyline() - by default, an empty line causes cmd.cmd to repeat the last command
+    def emptyline(self):
+        pass
     
     # Exit on receiving EOF    
     def do_EOF(self, line):
         self.stdout_write("bye")
         return True
 
-    # Override emptyline() - by default, an empty line causes cmd.cmd to repeat the last command
-    def emptyline(self):
-        pass
+    ##############################################################################
+    # UTILITY FUNCTIONS
+    ##############################################################################
+
+   
+    # Function to update the prompt to the current working directory
+    def update_prompt(self):
+        cwd = os.getcwd()
+        self.prompt = cwd + self.prompt_separator
+
+    ##############################################################################
+    # PYBASH COMMAND-LINE FUNCTIONS
+    ##############################################################################
+    
+    # Override the cd command - working directory is tracked in python 
+    def do_cd(self, line):
+        if os.path.isdir(line):
+            os.chdir(line)
+            self.update_prompt()
+        else:
+            self.print_error("cd: %s Not a directory" % line)
+
+    # Allow 'exit' or 'exit()' commands to quit pybash
+    def do_exit(self, line):
+        return self.do_EOF(line)
+
+    # Function to update self.cmd_flags with user input
+    def do_set(self, line):
+        parts = [s.strip() for s in line.split('=')]
+        if len(parts) != 2:
+            self.print_error("Invalid set syntax: %s" % line)
+        else:
+            # Get key and value
+            key = parts[0]
+            value = parts[1]
+            # Attempt to convert
+            value = pybash_util.autoconvert(value)
+            # Check to see if this variable must be a specific type
+            if key in self.cmd_flag_types:
+                add_var = False
+                # Check special keywords
+                if type(self.cmd_flag_types[key]) == str and self.cmd_flag_types[key] == "file_exists":
+                    # String that points to a file that exists
+                    if os.path.isfile(value):
+                        add_var = True
+                # todo: elif other special cases
+                else: 
+                    if type(value) == self.cmd_flag_types[key]:
+                        add_var = True
+                # Add the value if type identification was successful
+                if add_var:
+                    self.cmd_flags[key] = value
+                    self.stdout_write("Key %s updated to %s %s" % (key, type(value), value))
+                else:
+                    self.print_error("Key %s must have type %s, got %s %s" % (key, self.cmd_flag_types[key], value, type(value)))
+            else:
+                self.cmd_flags[key] = value
+                self.stdout_write("key %s updated to %s %s" % (key, type(value), value))
+
+    # Function to display self.cmd_flags
+    def do_show(self, line):
+        for key in line.split():
+            if key in self.cmd_flags:
+                self.stdout_write("%s = %s %s" % (key, self.cmd_flags[key], type(self.cmd_flags[key])))
+            else:
+                self.stdout_write("key %s not found" % key)
+
+    # Override shell sudo command
+    #   - if 'sudo -i' is used, launch pybash as root
+    #   - else, run shell sudo command
+    def do_sudo(self, line):
+        if line.split()[0] == '-i':
+            self.default("sudo python /development/python/pybash/pybash.py")
+        else:
+            self.default("sudo " + line)
+
+    ##############################################################################
+    # PYBASH HISTORY MANAGEMENT 
+    ##############################################################################
+
+    # Emulate the bash history command
+    def do_history(self, line):
+        # Step 1) Build history parser if not already done from a previous history cmd
+        if not hasattr(self, 'history_argparser'):
+            self.history_argparser = argparse.ArgumentParser(prog='history')
+            self.history_argparser.add_argument('-c', '--clear', action="store_true")
+            self.history_argparser.add_argument('-d', '--delete', type=int)
+            self.history_argparser.add_argument('-a', '--append', nargs='?', const=self.history_file, type=str)
+            self.history_argparser.add_argument('-n', '--new', nargs='?', const=self.history_file, type=str)
+            self.history_argparser.add_argument('-r', '--read', nargs='?', const=self.history_file, type=str)
+            self.history_argparser.add_argument('-w', '--write', nargs='?', const=self.history_file, type=str)
+            # TODO: -p, -s
+
+        # Step 2) Parse args in try/catch
+        try:
+            # If this history command is part of a pipeline, only parse arguments before the first pipe
+            if '|' in line:
+                parts = line.split('|')
+                history_args = parts[0]
+                remaining_cmd = '|'.join(parts[1:])
+            else:
+                history_args = line
+                remaining_cmd = None
+            # Parse the history arguments
+            hist_args = self.history_argparser.parse_args(args=history_args.split())
+        except SystemExit as e:
+            # Catch parse_args() error, display message but do not exit program!
+            self.print_error("invalid history command: %s" % line)
+            return
+        
+        # Step 3) Perform history operations
+
+        # a) Perform history clear
+        if hist_args.clear:
+            self.write_debug("Clearing history", "do_history")
+            # Built-in readline function
+            readline.clear_history()
+        
+        # b) Perform history delete
+        if hist_args.delete:
+            self.write_debug("Clearing deleting history line %i" % hist_args.delete, "do_history")
+            # Delete line and adjust initial_history_length if required
+            self.initial_history_length = pybash_util.remove_history_item(hist_args.delete, self.initial_history_length)
+
+        # c) Perform history append
+        if hist_args.append:
+            # Manual write all history lines to file, starting at the index recorded when session started
+            start = self.initial_history_length
+            end = readline.get_current_history_length()
+            self.write_debug("Appending new history lines %i to %i to file %s" % (start, end, hist_args.append), "do_history")
+            with open(self.history_file, 'a') as f:
+                for i in range(start, end + 1):
+                    f.write(readline.get_history_item(i) + "\n")
+            
+        # d) Perform history new
+        if hist_args.new:
+            # Manually read lines in history file, starting at the index recorded (+1) when session started
+            self.write_debug("Read new lines %i and above from history file since the begining of this pybash session: %s" % (self.initial_history_length + 1, hist_args.new), "do_history")
+            with open(self.history_file, 'r') as f:
+                for i, hist_line in enumerate(f):
+                    if i > self.initial_history_length:
+                        readline.add_history(hist_line.strip())
+
+        # e) Perform history read
+        if hist_args.read:
+            self.write_debug("Read all lines from history file and append to this session's history: %s" % hist_args.read, "do_history")
+            # Built-in readline function
+            readline.read_history_file(self.history_file) 
+        
+        # f) Perform history write
+        if hist_args.write:
+            self.write_debug("Write current history to this history file, overwriting its contents: %s" % hist_args.read, "do_history")
+            # Built-in readline function
+            readline.write_history_file(self.history_file)
+        
+        # g) Display history
+        if len(history_args.strip()) == 0:
+            self.write_debug("Display history", "do_history")
+            # Add the rest of the pipeline if required, then inster the pybash_helper.show_history() function
+            #   - this will print history + line numbers to stdout
+            #   - the stdout can be redirected as required
+            if remaining_cmd:
+                full_line = "pybash_helper.show_history() | " + remaining_cmd
+            else:
+                full_line = "pybash_helper.show_history()"
+            # Run the resulting command
+            self.default(full_line)
+    
+    ####################################################################################
+    # AUTOCOMPLETE FUNCTIONS
+    ####################################################################################
   
     # Function to take autocomplete matches and prompt the user if they want to display a large number
     def within_limits(self, matches, text):
@@ -186,169 +358,3 @@ class pybash_cmd(Cmd, pybash_io):
         
         # Check limits and display
         return self.within_limits(matches, text) 
-    
-    
-
-    ##############################################################################
-    # UTILITY FUNCTIONS
-    ##############################################################################
-
-   
-    # Function to update the prompt to the current working directory
-    def update_prompt(self):
-        cwd = os.getcwd()
-        self.prompt = cwd + self.prompt_separator
-
-    ##############################################################################
-    # PYBASH COMMAND-LINE FUNCTIONS
-    ##############################################################################
-    # Override the cd command - working directory is tracked in python 
-    def do_cd(self, line):
-        if os.path.isdir(line):
-            os.chdir(line)
-            self.update_prompt()
-        else:
-            self.print_error("cd: %s Not a directory" % line)
-
-    # Allow 'exit' or 'exit()' commands to quit pybash
-    def do_exit(self, line):
-        return self.do_EOF(line)
-
-    # Function to update self.cmd_flags with user input
-    def do_set(self, line):
-        parts = [s.strip() for s in line.split('=')]
-        if len(parts) != 2:
-            self.print_error("Invalid set syntax: %s" % line)
-        else:
-            # Get key and value
-            key = parts[0]
-            value = parts[1]
-            # Attempt to convert
-            value = pybash_util.autoconvert(value)
-            # Check to see if this variable must be a specific type
-            if key in self.cmd_flag_types:
-                add_var = False
-                # Check special keywords
-                if type(self.cmd_flag_types[key]) == str and self.cmd_flag_types[key] == "file_exists":
-                    # String that points to a file that exists
-                    if os.path.isfile(value):
-                        add_var = True
-                # todo: elif other special cases
-                else: 
-                    if type(value) == self.cmd_flag_types[key]:
-                        add_var = True
-                # Add the value if type identification was successful
-                if add_var:
-                    self.cmd_flags[key] = value
-                    self.stdout_write("Key %s updated to %s %s" % (key, type(value), value))
-                else:
-                    self.print_error("Key %s must have type %s, got %s %s" % (key, self.cmd_flag_types[key], value, type(value)))
-            else:
-                self.cmd_flags[key] = value
-                self.stdout_write("key %s updated to %s %s" % (key, type(value), value))
-
-    # Function to display self.cmd_flags
-    def do_show(self, line):
-        for key in line.split():
-            if key in self.cmd_flags:
-                self.stdout_write("%s = %s %s" % (key, self.cmd_flags[key], type(self.cmd_flags[key])))
-            else:
-                self.stdout_write("key %s not found" % key)
-
-    # Override shell sudo command
-    #   - if 'sudo -i' is used, launch pybash as root
-    #   - else, run shell sudo command
-    def do_sudo(self, line):
-        if line.split()[0] == '-i':
-            self.default("sudo python /development/python/pybash/pybash.py")
-        else:
-            self.default("sudo " + line)
-
-
-    # Emulate the bash history command
-    def do_history(self, line):
-        # Step 1) Build history parser if not already done from a previous history cmd
-        if not hasattr(self, 'history_argparser'):
-            self.history_argparser = argparse.ArgumentParser(prog='history')
-            self.history_argparser.add_argument('-c', '--clear', action="store_true")
-            self.history_argparser.add_argument('-d', '--delete', type=int)
-            self.history_argparser.add_argument('-a', '--append', nargs='?', const=self.history_file, type=str)
-            self.history_argparser.add_argument('-n', '--new', nargs='?', const=self.history_file, type=str)
-            self.history_argparser.add_argument('-r', '--read', nargs='?', const=self.history_file, type=str)
-            self.history_argparser.add_argument('-w', '--write', nargs='?', const=self.history_file, type=str)
-            # TODO: -p, -s
-
-        # Step 2) Parse args in try/catch
-        try:
-            # If this history command is part of a pipeline, only parse arguments before the first pipe
-            if '|' in line:
-                parts = line.split('|')
-                history_args = parts[0]
-                remaining_cmd = '|'.join(parts[1:])
-            else:
-                history_args = line
-                remaining_cmd = None
-            # Parse the history arguments
-            hist_args = self.history_argparser.parse_args(args=history_args.split())
-        except SystemExit as e:
-            # Catch parse_args() error, display message but do not exit program!
-            self.print_error("invalid history command: %s" % line)
-            return
-        
-        # Step 3) Perform history operations
-
-        # a) Perform history clear
-        if hist_args.clear:
-            self.write_debug("Clearing history", "do_history")
-            # Built-in readline function
-            readline.clear_history()
-        
-        # b) Perform history delete
-        if hist_args.delete:
-            self.write_debug("Clearing deleting history line %i" % hist_args.delete, "do_history")
-            # Delete line and adjust initial_history_length if required
-            self.initial_history_length = pybash_util.remove_history_item(hist_args.delete, self.initial_history_length)
-
-        # c) Perform history append
-        if hist_args.append:
-            # Manual write all history lines to file, starting at the index recorded when session started
-            start = self.initial_history_length
-            end = readline.get_current_history_length()
-            self.write_debug("Appending new history lines %i to %i to file %s" % (start, end, hist_args.append), "do_history")
-            with open(self.history_file, 'a') as f:
-                for i in range(start, end + 1):
-                    f.write(readline.get_history_item(i) + "\n")
-            
-        # d) Perform history new
-        if hist_args.new:
-            # Manually read lines in history file, starting at the index recorded (+1) when session started
-            self.write_debug("Read new lines %i and above from history file since the begining of this pybash session: %s" % (self.initial_history_length + 1, hist_args.new), "do_history")
-            with open(self.history_file, 'r') as f:
-                for i, hist_line in enumerate(f):
-                    if i > self.initial_history_length:
-                        readline.add_history(hist_line.strip())
-
-        # e) Perform history read
-        if hist_args.read:
-            self.write_debug("Read all lines from history file and append to this session's history: %s" % hist_args.read, "do_history")
-            # Built-in readline function
-            readline.read_history_file(self.history_file) 
-        
-        # f) Perform history write
-        if hist_args.write:
-            self.write_debug("Write current history to this history file, overwriting its contents: %s" % hist_args.read, "do_history")
-            # Built-in readline function
-            readline.write_history_file(self.history_file)
-        
-        # g) Display history
-        if len(history_args.strip()) == 0:
-            self.write_debug("Display history", "do_history")
-            # Add the rest of the pipeline if required, then inster the pybash_helper.show_history() function
-            #   - this will print history + line numbers to stdout
-            #   - the stdout can be redirected as required
-            if remaining_cmd:
-                full_line = "pybash_helper.show_history() | " + remaining_cmd
-            else:
-                full_line = "pybash_helper.show_history()"
-            # Run the resulting command
-            self.default(full_line)
