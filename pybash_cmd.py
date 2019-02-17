@@ -9,11 +9,35 @@ import pybash_util
 
 from pybash_io import pybash_io
 
-# The pybash_cmd class forms the basis of the terminal interface 
-#    - based on the cmd.Cmd class
-#    - custom functions: cd, exit, sudo, set, show
-#    - extends pybash_io for stdout / stderr printing functions
 class pybash_cmd(Cmd, pybash_io):
+    """
+    The pybash_cmd class forms the basis of the terminal interface 
+       - based on the cmd.Cmd class
+       - custom functions: cd, exit, sudo, set, show
+       - extends pybash_io for stdout / stderr printing functions
+    
+    Attributes:
+        banner (str): the banner text printed when starting interactive pybash shell
+        prompt_separator (str): Text printed in the command-line prompt after the file path 
+        user_home (str): The home directory of the user, default to '~'
+        history_file (str): Path of the pybash history file
+        cmd_flags (dict): Dictionary that stores pybash configuration values such as:
+            1. debug: If True, then debug statements are printed
+            2. shell: UNIX shell used to execute shell commands, defaults to /bin/bash
+            3. max_autocomplete: limits the number of items displayed when autocompleting paths
+                and names before prompting user if they want to display all possibilities
+        cmd_flag_types (dict): Used to enforce valid variable types for the values stored in
+            cmd_flags (for example, debug must be a bool variable). The special 'file_exists' str
+            is used to indicate str variables which represent an existing file.
+        
+        aliases (dict): Used to store shell-like aliases for common commands. Each value in aliases
+            is itself a dict which controls the alias behaviour for different pipeline stages:
+            Format: {'alias_cmd': {-1: <val for last pipeline stage>, 0: <val for other stages>}}
+            Example: {'ll':    {0: 'ls -lrt', -1: 'ls -lrt --color=auto'}}
+            If the '0' or '-1' value is ommited, the alias is not applied for those stages.
+    """
+    
+    
     ####################################################################################
     # DEFINITIONS
     ####################################################################################
@@ -46,38 +70,53 @@ class pybash_cmd(Cmd, pybash_io):
     # OVERRIDE CMD.CMD LOOP FUNCTIONS
     ####################################################################################
 
-    # This function is called when the terminal prompt loop is first entered
     def preloop(self):
-        # Initialize interpreter local + global "scope"
+        """
+        Override of the cmd.Cmd function which is called when the terminal prompt loop is 
+        first entered. Performs the following:
+        1. Initialize the interpreter's local and global dicts in order to maintain a separate
+            "scope" from the pybash program. Import the pybash_helper module so that it is 
+            available when executing commands.
+        2. Initialize the list of commands and environment variables available in the user's 
+            default shell.
+        3. Initialize history from history file 
+        4. Update prompt and print banner
+        """
+
+        # 1) Initialize interpreter local + global "scope"
         self.locals = {}
         self.globals = {}
         exec('import pybash_helper', self.globals, self.locals)
 
+        # 2) Get commands and environment variables from user's default shell
         # Initialize the list of commands and aliases available in the user's shell
     	self.available_shell_cmds()
-
         # Initialize environment variables
         self.initialize_environment_variables()
-
-        # Set default prompt
-        self.update_prompt()
         
-        # Initialize history
+        # 3) Initialize history
         self.stdout_write("history file: %s" % self.history_file)
         if os.path.exists(self.history_file):
             readline.read_history_file(self.history_file)
         self.initial_history_length = readline.get_current_history_length()
         atexit.register(readline.write_history_file, self.history_file)
         
-        # Print banner
-        self.stdout_write(self.banner)
+        # 4) Set default prompt and write the banner
+        self.update_prompt()
+        if self.banner:
+            self.stdout_write(self.banner)
 
-    # Override emptyline() - by default, an empty line causes cmd.cmd to repeat the last command
     def emptyline(self):
+        """
+        Override cmd.Cmd.emptyline()
+        By default, an empty line causes cmd.cmd to repeat the last command
+        """
         pass
     
-    # Exit on receiving EOF    
     def do_EOF(self, line):
+        """
+        Exit on receiving EOF    
+        """
         self.stdout_write("bye")
         return True
 
@@ -86,8 +125,10 @@ class pybash_cmd(Cmd, pybash_io):
     ##############################################################################
 
    
-    # Function to update the prompt to the current working directory
     def update_prompt(self):
+        """
+        Function to update the prompt to the current working directory
+        """
         cwd = os.getcwd()
         self.prompt = cwd + self.prompt_separator
 
@@ -95,21 +136,34 @@ class pybash_cmd(Cmd, pybash_io):
     # PYBASH COMMAND-LINE FUNCTIONS
     ##############################################################################
     
-    # Override the cd command - working directory is tracked in python 
     def do_cd(self, line):
+        """
+        Override the cd command - working directory is tracked in python 
+        """
         if os.path.isdir(line):
             os.chdir(line)
             self.update_prompt()
         else:
             self.print_error("cd: %s Not a directory" % line)
 
-    # Allow 'exit' or 'exit()' commands to quit pybash
     def do_exit(self, line):
+        """
+        Allow 'exit' or 'exit()' commands to quit pybash
+        """
         return self.do_EOF(line)
 
-    # Function to update self.cmd_flags with user input
     def do_set(self, line):
-        parts = [s.strip() for s in line.split('=')]
+        """
+        Function to update self.cmd_flags with user input. 
+        Args: 
+            line (str): 'set' command arguments in the form: 'key = value'
+
+        Get the key and value from the input line and validate against the required variable type
+        (if available) from cmd_flag_types.  If this check passes, add/set the key/value in 
+        cmd_flags.
+        
+        """
+        parts = [s.strip() for s in line.split('=') if s]
         if len(parts) != 2:
             self.print_error("Invalid set syntax: %s" % line)
         else:
@@ -126,7 +180,7 @@ class pybash_cmd(Cmd, pybash_io):
                     # String that points to a file that exists
                     if os.path.isfile(value):
                         add_var = True
-                # todo: elif other special cases
+                # TODO: elif other special cases
                 else: 
                     if type(value) == self.cmd_flag_types[key]:
                         add_var = True
@@ -140,18 +194,24 @@ class pybash_cmd(Cmd, pybash_io):
                 self.cmd_flags[key] = value
                 self.stdout_write("key %s updated to %s %s" % (key, type(value), value))
 
-    # Function to display self.cmd_flags
     def do_show(self, line):
+        """
+        Function to display self.cmd_flags
+        Args: 
+            line (str): 'show' command arguments in the form: 'key = value'
+        """
         for key in line.split():
             if key in self.cmd_flags:
                 self.stdout_write("%s = %s %s" % (key, self.cmd_flags[key], type(self.cmd_flags[key])))
             else:
                 self.stdout_write("key %s not found" % key)
 
-    # Override shell sudo command
-    #   - if 'sudo -i' is used, launch pybash as root
-    #   - else, run shell sudo command
     def do_sudo(self, line):
+        """
+        Override shell sudo command
+          - if 'sudo -i' is used, launch pybash as root
+          - else, run shell sudo command
+        """
         if line.split()[0] == '-i':
             self.default("sudo python /development/python/pybash/pybash.py")
         else:
@@ -161,8 +221,17 @@ class pybash_cmd(Cmd, pybash_io):
     # PYBASH HISTORY MANAGEMENT 
     ##############################################################################
 
-    # Emulate the bash history command
     def do_history(self, line):
+        """
+        Emulates the bash history command:
+            -c / --clear: Clears the pybash history
+            -d / --delete (int) delete a specific history line
+            -a / --append [file] append all new history lines from this session to history file, 
+                or to file specified
+            -n / --new [file] read lines from history file created after pybash launched, 
+                or from file specified 
+            HERE
+        """
         # Step 1) Build history parser if not already done from a previous history cmd
         if not hasattr(self, 'history_argparser'):
             self.history_argparser = argparse.ArgumentParser(prog='history')

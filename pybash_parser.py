@@ -6,20 +6,36 @@ import  pybash_util
 from parser.designator_parser import designator_parser
 from parser.parameter_parser import parameter_parser
 
-# Class to manage parsing / expansion of commands:
-#  - event and word designators (e.g. !!, !$) (designator_parser class)
-#  - parameter expansion (e.g. ${var:4} (parameter_parser class)
-#  - file + pipe redirects
 class pybash_parser(designator_parser, parameter_parser):
+    """
+    Class to manage parsing / expansion of commands:
+     1. event and word designators (e.g. !!, !$) (designator_parser class)
+     2. parameter expansion (e.g. ${var:4} (parameter_parser class)
+     3. file + pipe redirects
 
-    # Function to process all redirects in a command string
-    #    - Redirects are implemented using the std_pipe variable, which describes the "destination" of the command stdout/stderr + "location" of the stdin
-    #    - Look for '>', '>>', '<' in command
-    #    - For example: echo foo >> bar 2>&1
+    """
+
     def redirects(self, cmd, std_pipe):
+        """
+        Function to process all redirects in a command string. Redirects are implemented using 
+        the std_pipe variable, which describes the "location" of the command's  stdin/stdout/stderr
+        This function will look for '>', '>>', '<' in command, parse the redirect, then return the 
+        command with the redirect remove.
+
+        For example: echo foo >> bar 2>&1
+        
+        Args:
+            cmd (str): Command which may contain 0 or more redirect statements
+            std_pipe (tuple): pybash std_pipe variable containing "location" of stdin/stdout/stderr
+
+        Returns:
+            (str) Command with all redirect text removed
+        """
+
         # All cmds start with these r/w modes by default
         std_modes = ['r', 'w', 'w']
-        
+        # TODO: stdin redirect from file   
+        # TODO: add support for /dev/null
         cmd_in = cmd
         while '<' in cmd or '>' in cmd:
             self.write_debug("iteration:", "redirects")

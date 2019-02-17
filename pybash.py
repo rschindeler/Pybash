@@ -21,41 +21,143 @@ from pybash_parser import pybash_parser
 #        - would wait for the input deque to be None (same as a file-like object being 'closed')
 
 
-
-# Main class of the pybash interpreter which handles the execution of commands
-# Command execution flow:
-#    a) the cmd.Cmd.precmd() function is executed which will expand bash-like designators
-#    b) cmd.Cmd checks for special pybash commands such as cd, history
-#    c) the cmd.Cmd.default() function is executed if no special commands were found, kicking off
-#       the main pybash command parsing function: run_pipeline() 
-#    d) run_pipeline() splits the input line by '|' and kicks off the execution of each stage of 
-#       the pipeline
-#         - the standard pipe is initiated and managed by this function
-#         - redirect parsing is done for each stage
-#    e) each stage of the pipeline is processed using the run_cmd() function
-#         - pre-processes the command (aliases) and input variables
-#         - run_cmd() will call run_shell_cmd() or run_python_cmd() as appropriate
-#    f) run_pipeline() gets the results fo run_shell_cmd() / run_python_cmd()
-#         - outputs will be passed to the next stage in the pipeline
-#         - if this is the last stage, any open file handles are closed and assignment to
-#           python variables is performed
 class pybash(pybash_cmd, pybash_parser):
+    """
+    Pybash
+    **************************
+    Pybash is a command-line interpreter written in python. It's goal is to allow the execution 
+    of any valid shell or python command - as well as combinations of the two! 
+    Shell-like pipes, file redirects, and pybash helper functions allow you to move back and 
+    forth between shell and python to make your life easy. 
 
-    # Function to execute a shell command, accepting stdin and returning stdout / stderr
-    #    If stdin is not None:
-    #        - if type(stdin) == file, then it will be passed to subprocess.Popen()
-    #        - if not, it is written to the process's stin after subprocess.Popen() is called 
-    #    If stdout_pipe / stderr_pipe are subprocess.PIPE, they are passed to subprocess.Popen
-    #        - if not. the subprocess will print its stdout / stderr to terminal
-    #    The std_pipe list can be used in-place of [stdin, stdout_pipe, stderr_pipe]
-    #
-    #    Returns: stdout file handle, stderr file handel, process
-    #           - if stdout_pipe / stderr_pipe are None, these file handels are None
-    def run_shell_cmd(self, cmd, std_pipe=None, stdin=None, stdout_pipe=None, stderr_pipe=None):
+    Examples
+    =========================
+    Some examples of commands that can be executed in the pybash interpreter:
+    1. (pure shell): find . -name "*.xml" | xargs -I % cp % /path/to/dir/%.backup
+    2. (pure python): foo = [bar['value'] for bar in foo if 'test' in bar and bar['test'] == 2]
+    3. (shell+python): find . - name "*.yaml" | [s for s in @ if 'test_str' in s] | xargs cat > out.yaml
+    4. (shell+python): dict_list = find . -name "*.yaml" | [from_file(f) for f in @] | [d for d in @ if 'test_key' in d]
+   
+    Command Execution Flow
+    ========================
+    Pybash works by determining which parts of a command should be executed in python, and 
+    which parts by the shell. Python commands are executed using the built-in exec(), and
+    shell commands are executed using subprocess.Popen(). 
+
+    Each command (which may contain multiple pipeline stages) is evaluated as follows:
+
+    1. the cmd.Cmd.precmd() function is executed which will expand bash-like designators
+    2. cmd.Cmd checks for special pybash commands such as cd, history
+    3. the cmd.Cmd.default() function is executed if no special commands were found, kicking off
+      the main pybash command parsing function: run_pipeline() 
+    4. run_pipeline() splits the input line by '|' and kicks off the execution of each stage of 
+      the pipeline
+        - the standard pipe is initiated and managed by this function
+        - redirect parsing is done for each stage
+    5. each stage of the pipeline is processed using the run_cmd() function
+        - pre-processes the command (aliases) and input variables
+        - run_cmd() will call run_shell_cmd() or run_python_cmd() as appropriate
+    6. run_pipeline() gets the results fo run_shell_cmd() / run_python_cmd()
+        - outputs will be passed to the next stage in the pipeline
+        - if this is the last stage, any open file handles are closed and assignment to
+          python variables is performed
+    
+    Pipes and Redirects
+    ======================= 
+    Pybash handels piping and redirects using the std_pipe variable.  This is a 3-element tuple
+    which contains the "location" of (stdin, stdout, stderr). The elements of std_pipe will resolve
+    to either a file-like object (e.g. a file or os.pipe), None, or /dev/null. More details on
+    std_pipe bellow.
+    
+    Redirects are perfomed by changing the "location" in std_pipe to either another file-like
+    object or to reference the location of another element in std_pipe. This allows pybash to
+    emulate bash-like redirects such as 'cmd > foo' or 'cmd > foo 2>&1'.
+
+    Redirects are parsed BEFORE knowning if it is a shell or python cmd
+       - For this to work, run_bash_cmd() and run_python_cmd() must treat std_pipe the same way
+       - Opening pipes occurs inside these commands since they do so in different ways
+           - shell: pipe = r/w pair of file handles
+           - python: pipe = collections.deque object
+       - Opening files occures before run_bash_cmd() / run_python_cmd() 
+           - Files are opened the same way
+           - The read / write / append mode must be known, these commands are agnostic to this
+    
+    Notes on std_pipe
+    ====================================
+
+    Each element of std_pipe can be:
+        None: 
+            - stdin: nothing will be passed to python / shell cmd
+            - stdout / stderr: output will be written to sys.stdout/sys.stderr
+        subprocess.PIPE:
+            - shell: an os.pipe() will be opened using pybash_helper.open_pipe()
+                - This creates file objects for the cmd to write to, next cmd to read from
+            - python cmd: return value / error will be added to a deque
+        file-like object:
+            - stdin: cmd will read from this file
+                - shell: pass to subprocess.Popen()
+                - python: read as string and close
+            - stdout / stderr: output will be written to this file
+        str:
+            - a file objected is opened for this file path
+                - shell: binary mode ('rb', 'wb', 'ab')
+                - python: text  mode ('r', 'w', 'a')
+        [0,1,2]:
+            - Used for redirects AFTER other std_pipe elements are processed (e.g. pipe opened) 
+            - e.g. if std_pipe = [None, subprocess.PIPE, 1]:
+                a) nothing passed to cmd input
+                b) pybash_helper.open_pipe() alled for stdout
+                c) write file-object for stdout is copied for stderr
+    
+    """
+    
+    def run_shell_cmd(self, cmd, std_pipe=None, stdin=None, stdout=None, stderr=None):
+        """
+        Function to execute a shell command in a subprocess, accepting stdin and returning stdout / stderr.
+        The three standard pipe varaibles can be passed individually or together using the std_pipe list. 
+        run_shell_cmd() is non-blocking, i.e. it will return before the subprocess finishes executing.
+        This allows for proper pipeline streaming.
+
+        Args:
+            cmd (str): the shell command to execute (may contain bash-like parameters such as ${var}
+            std_pipe (list): list used to pass [std_in, stdout, stderr] if all three
+                are available / requried
+            stdin: the standard input to pass to the shell command. this may be:
+                1. file-like object (open python file or pipe), passed directly to 
+                    subprocess.popen()
+                2. python variable that can be converted to a string with str(). this will written 
+                    to using process.stdin.write() after the process is started.
+                3. none: no input is provided to the subprocess.
+            stdout: the destination of the standard output that will be returned by the shell 
+                command. This may be:
+                1. file-like object (open python file or pipe), passed subprocess.popen()
+                2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()
+                3. tuple: this represents an already-existing pipe (read,write), output written 
+                    to stdout[1]
+                4. none: stdout will be written to sys.stdout (i.e. the terminal) 
+            stderr: the destination of the standard error that will be returned by the shell command.
+                    This may be:
+                1. file-like object (open python file or pipe), passed subprocess.popen()
+                2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()
+                3. tuple: this represents an already-existing pipe (read,write), output written 
+                    to stderr[1]
+                4. none: stderr will be written to sys.stderr (i.e. the terminal) 
+            
+    
+        Returns:
+            tuple: file-like objects for stdout, stderr and the process opened by subprocess.popen()
+                (stdout, stderr, process)
+                1. if stdout / stderr file-like objects were passed to run_shell_cmd(), 
+                    the same objects are returned
+                2. if subprocess.PIPE was passed to run_shell_cmd(), the read file handel of the 
+                    newly-created os.pipe() is returned.
+                3. if none was passed to run_shell_cmd(), then none is returned.
+        """
+        
         # Expand std_pipe, create pipes, handle redirects
-        stdin,stdout_pipe,stderr_pipe = pybash_util.expand_std_pipe(std_pipe, stdin, stdout_pipe, stderr_pipe, use_pipe=True)
+        stdin,stdout,stderr = pybash_util.expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=True)
         if std_pipe:
-            pipe_display = pybash_util.display_std_pipe([stdin, stdout_pipe, stderr_pipe])
+            pipe_display = pybash_util.display_std_pipe([stdin, stdout, stderr])
             self.write_debug("Expanded std_pipe: %s" % pipe_display, "run_shell_cmd")
 
         # Combine cmd if list and perform parameter subsitution
@@ -78,13 +180,13 @@ class pybash(pybash_cmd, pybash_parser):
             stdin_var = None
             write_stdin = False
        
-        # Possible values for stdout_pipe, stderr_pipe:
+        # Possible values for stdout, stderr:
         #    None: stdout / stderr will be writen to the terminal
         #    existing file object: stdout / stderr are redirected to file
         #    subprocess.PIPE: an os.pipe() is created
-        #    tuple: this is a pipe, write the stdout_pipe[1]
-        stdout_var = stdout_pipe[1] if stdout_pipe and type(stdout_pipe) == tuple else stdout_pipe
-        stderr_var = stderr_pipe[1] if stderr_pipe and type(stderr_pipe) == tuple else stderr_pipe
+        #    tuple: this is a pipe, write the stdout[1]
+        stdout_var = stdout[1] if stdout and type(stdout) == tuple else stdout
+        stderr_var = stderr[1] if stderr and type(stderr) == tuple else stderr
 
         self.write_debug("shell stdout_var: %s" % stdout_var, "run_shell_cmd")
         self.write_debug("shell stderr_var: %s" % stderr_var, "run_shell_cmd")
@@ -102,29 +204,78 @@ class pybash(pybash_cmd, pybash_parser):
             process.stdin.write(str(stdin))
             process.stdin.close()
         
-        # If stdout_pipe/stderr_pipe were tuples, return the read file object
+        # If stdout/stderr were tuples, return the read file object
         # If not, return the process.stdout/stderr
-        stdout_ret = stdout_pipe[0] if type(stdout_pipe) == tuple else process.stdout
-        stderr_ret = stderr_pipe[0] if type(stderr_pipe) == tuple else process.stderr
+        stdout_ret = stdout[0] if type(stdout) == tuple else process.stdout
+        stderr_ret = stderr[0] if type(stderr) == tuple else process.stderr
         self.write_debug("shell stdout_ret: %s" % stdout_ret, "run_shell_cmd")
         self.write_debug("shell stderr_ret: %s" % stderr_ret, "run_shell_cmd")
         
         # Return file descriptors + process
         return stdout_ret, stderr_ret, process
         
+    def run_python_cmd(self, cmd, std_pipe=None, input_var=None, stdout=None, stderr=None):
+        """
+        Function to execute a python command, accepting an input variable and returning:
+        1. Result of python command
+        2. stdout of python command
+        3. stderr of python command
 
-    # Function to execute a python command, accepting an input variable and returning and output variable + error 
-    #    If input_var is a file, it will read, converted to a string and closed
-    #    The std_pipe list can be used in-place of [stdin, stdout_pipe, stderr_pipe]
-    #
-    #    Returns [stdout, stderr, None]
-    #    Where:
-    #       - stdout is either the result of a python command or the stdout printed by the command
-    #       - stderr is the stderr printed by the command
-    def run_python_cmd(self, cmd, std_pipe=None, input_var=None, stdout_pipe=None, stderr_pipe=None):
-        # Expand the std_pipe, handel redirects
-        input_var,stdout_pipe,stderr_pipe = pybash_util.expand_std_pipe(std_pipe, input_var, stdout_pipe, stderr_pipe)
-        self.write_debug("Expanded std_pipe: %s" % [type(input_var), stdout_pipe, stderr_pipe], "run_python_cmd")
+        The python command is executed using exec(cmd, self.globals, self.local) in order to maintain 
+        a separate "varable space" from the pybash program.
+
+        Unlike run_shell_cmd(), run_python_cmd() is blocking. A future improvement could be to execute
+        the python command in a subprocess, and allow streaming data through std_pipe.
+        
+        Args:
+            cmd (str): the shell command to execute 
+            std_pipe (list): list used to pass [input_var, stdout, stderr] if all three
+                are available / requried
+            input_var: The input variable to the python command, which acts similarily to stdin for
+                a shell command. This may be:
+                1. file-like object (open python file or pipe), which will be read and converted 
+                    to a string
+                2. python variable that will be passed directly
+                3. none: no input is provided to the python command
+            stdout: The destination of the result(s) of the python command. 
+                This may be:
+                1. file-like object (open python file or pipe), result(s) of python command will 
+                    be written here
+                2. subprocess.PIPE: a new collections.deque object will be created and result(s)
+                    of python command will be written here 
+                3. collections.deque object, result(s) of python command will be written here
+                4. none: stdout will be written to sys.stdout (i.e. the terminal) 
+            stderr: The destination of the standard error generated by the python command.
+                This may be:
+                1. file-like object (open python file or pipe), stderr of python command will 
+                    be written here
+                2. subprocess.PIPE: a new collections.deque object will be created and stderr
+                    of python command will be written here 
+                3. collections.deque object, stderr of python command will be written here
+                4. none: stdout will be written to sys.stdout (i.e. the terminal) 
+            
+    
+        Returns:
+            tuple: file-like objects for stdout, stderr
+                (stdout, stderr, None)
+                Note: Since run_python_cmd() does not execute in a subprocess, no process is returned by this function.
+                stdout and stderr are collections.deque objects, which typically have only one element.  Additional elements
+                are added by using redirects. For example, you can redirect the command's stderr to the stdout deque object.
+
+                The stdout deque may contain (one or both): 
+                a) the result of evaluating a python statement (e.g. if cmd = '2+4', stdout = 6)
+                b) the stdout resulting from executing the python statement (e.g. if cmd = 'print("foo")', stdout = 'foo')
+                
+                For example, if executing a function that contains a print() statement as well as returning a value, the
+                stdout deque will contain both the return value and the printed text.
+
+                The stderr deque will contain the errors generated by the python command (e.g. exception text)
+
+        """
+        
+        # Expand the std_pipe, handel redirects (create deque objects instead of os.pipe()) 
+        input_var,stdout,stderr = pybash_util.expand_std_pipe(std_pipe, input_var, stdout, stderr)
+        self.write_debug("Expanded std_pipe: %s" % [type(input_var), stdout, stderr], "run_python_cmd")
        
         ####################################################################
         # Step 1) Get input data, initialize __inputvar__ and __outputvar__ in self.locals
@@ -206,8 +357,8 @@ class pybash(pybash_cmd, pybash_parser):
         stderr_src_list = [stderr_val]
         
         # Define the mappings between the (name, output pipe, output print function, output source list)
-        output_mapping =  [("stdout", stdout_pipe, self.stdout_write, stdout_src_list), 
-                           ("stderr", stderr_pipe, self.stderr_write, stderr_src_list)]
+        output_mapping =  [("stdout", stdout, self.stdout_write, stdout_src_list), 
+                           ("stderr", stderr, self.stderr_write, stderr_src_list)]
         
         # Process each output mapping
         for name, pipe, print_fn, src_list in output_mapping:
@@ -233,7 +384,7 @@ class pybash(pybash_cmd, pybash_parser):
         
         # Close any open file handels and return output
         #    - there is no subprocess for python commands
-        output = [stdout_pipe, stderr_pipe, None]
+        output = [stdout, stderr, None]
         for i in range(2):
             if type(output[i]) == file:
                 if output[i].closed is False:
@@ -242,11 +393,42 @@ class pybash(pybash_cmd, pybash_parser):
                 output[i] = None
 
         return output
+       
+
+    def run_cmd(self, cmd, std_pipe=None, input_data=None, stdout=None, stderr=None, last_cmd=False):
+        """
+        Function to execute a single shell or python command and return the output in a pipe.
+        Note: A "single command" is one that does not contain a pipeline
+        
+        This function performs the following:
+        1. Validate and standardize the input variables 
+            1. Combine input variables into std_pipe list
+            2. Expand any deque inputs using pybash_utils.expand_deque_input()
+        2. Sub-in shell aliases if possible
+        3. Determine if the command should be executed as a shell command or python command
+            1. Commands including pybash helper functions are executed in python
+            2. Commands whose first word is a known shell command is executed in a shell subprocess
+            3. Any other commands are executed in python
+
+        Args:
+            cmd (str): the shell or python  command to execute
+            std_pipe (list): list used to pass [input_data, stdout, stderr] if all three
+                are available / requried
+            input_data: Either the input_var for run_python_cmd() or the stdin for run_shell_cmd()
+            stdout: The destination of the standard output for python / shell commands
+            stdout: The destination of the standard error for python / shell commands
         
 
-    # Function to execute a single shell or python command 
-    # i.e. a command that does not contain a pipeline
-    def run_cmd(self, cmd, std_pipe=None, input_data=None, stdout_pipe=None, stderr_pipe=None, last_cmd=False):
+        Returns:
+            tuple: Containing (stdout, stderr, process)
+                stdout and stderr are file-like objects (shell) or deque objects (python) 
+                generated by the command. process is only used for run_shell_cmd() which
+                executes as a subprocess.
+        
+        See run_python_cmd() and run_bash_cmd() for more information on input arguments
+        and return types.
+
+        """
         ############################################################################
         # Step 1) Validate and standardize input variables
         # If std_pipe was provided, check length
@@ -256,7 +438,7 @@ class pybash(pybash_cmd, pybash_parser):
                 raise ValueError
         # If not, create using other input variables
         else:
-            std_pipe = [input_data, stdout_pipe, stderr_pipe]
+            std_pipe = [input_data, stdout, stderr]
         
         # If input var is a deque, expand
         if type(std_pipe[0]) == deque:
@@ -319,56 +501,71 @@ class pybash(pybash_cmd, pybash_parser):
             return self.run_python_cmd(cmd, std_pipe=std_pipe)
     
 
-    # Function to execute a combined shell-python command pipeline
-    #    py_var = 5 + 4
-    #    cat test.txt | grep str | tail -n 5 >> out_file.txt
-    #    grep -nr str | head -n 5 | py_var
-    #    py_var = grep -nr str | head -n 5
-    #    cat test.txt | grep myvar | cut -d '=' -f2 | py_function(@)
     def run_pipeline(self, pipeline_cmd):
+        """
+        Function to execute a combined shell-python command pipeline
+        
+        Examples:
+        * py_var = 5 + 4
+        * cat test.txt | grep str | tail -n 5 >> out_file.txt
+        * grep -nr str | head -n 5 | py_var
+        * py_var = grep -nr str | head -n 5
+        * cat test.txt | grep myvar | cut -d '=' -f2 | py_function(@)
+        
+        This function breaks the pipeline into individual commands, and handels
+        the redirects, piping between commands, and assignment to python variables.
+
+        Args:
+            pipeline_cmd (str): String containing mixed shell and python syntax,
+                using '|' to denote pipes.
+
+        """
+        
+        #######################################################################
+        # Step 1) Setup
+        
         # Check for top-level redirects and expansions
         # a) Check for assignment operator
         pipeline_cmd, output_var = self.get_assignment(pipeline_cmd)
 
-            
-    
-        # c) Get each part of the pipeline
+        # b) Get each part of the pipeline
         pipeline = [p for p in pipeline_cmd.split("|") if p]
 
-        # Inintialize the "location" of [stdin, stdout, stderr] for the pipeline
+        # c) Inintialize the "location" of [stdin, stdout, stderr] for the pipeline
         #    - For the first iteration, stdin = None
         std_pipe = [None, None, None]
         
-        # Execute each part of the pipeline, passing output of each stage along
+        #######################################################################
+        # Step 2) Execute each part of the pipeline, passing output of each stage along
         for i in range(len(pipeline)):
             cmd = pipeline[i]
             self.write_debug("Starting cmd: %s" %cmd, "run_pipeline")
 
-            # Step 1) Initialize std_pipe for this iteration
-            # a) stdin: set by the previous iteration
-            # b) stdout: stage-dependant
+            # a) Initialize std_pipe for this iteration
+            # stdin: set by the previous iteration
+            # stdout: stage-dependant
             if i == len(pipeline)-1:
                 # For the last pipeline command, the stdout value is one of
                 #    None: this causes it to be displayed in the terminal
                 #    -2: this causes it to be assigned to the output variable
                 if output_var:
-                    std_pipe[1] = -2
+                    std_pipe[1] = subprocess.PIPE
                 else:
                     std_pipe[1] = None
             else:
                 # For all other iterations, pipe stdout to the next stage 
                 std_pipe[1] = subprocess.PIPE 
 
-            # c) stderr: all stages start with stderr = None
+            # stderr: all stages start with stderr = None
             std_pipe[2] = None
             
-            # Step 2) Get the redirects for this command
+            # b) Get the redirects for this command
             #   - by default, each pipeline stage reads stdin and writes to stdout + stderr
             #   - the "location" of stdin / stdout / stderr are determined by the std_pipe
             cmd = self.redirects(cmd, std_pipe)
             self.write_debug("std_pipe this stage: %s" % pybash_util.display_std_pipe(std_pipe), "run_pipeline")
             
-            # Step 3) Run command, get [stdout, stderr, subprocess.Popen() object]
+            # c) Run command, get [stdout, stderr, subprocess.Popen() object]
             try:
                 process = None
                 std_pipe[1], std_pipe[2], process = self.run_cmd(cmd, std_pipe=std_pipe, last_cmd = (i==len(pipeline)-1)) 
@@ -378,7 +575,7 @@ class pybash(pybash_cmd, pybash_parser):
                 self.write_debug(traceback.format_exc())
                 break
             
-            # Step 4) Assign stdin for the next iteration
+            # d) Assign stdin for the next iteration
             std_pipe[0] = std_pipe[1]
             
             self.write_debug("Done cmd: %s" % cmd, "run_pipeline")
@@ -386,14 +583,14 @@ class pybash(pybash_cmd, pybash_parser):
     
     
         #######################################################################
-        # Perform post-pipeline activities
+        # Step 3) Perform post-pipeline activities
         self.write_debug("done pipeline", "run_pipeline")
-        # 1) If there is a remaining process, wait for it to complete 
+        # a) If there is a remaining process, wait for it to complete 
         if process:
             self.write_debug("Waiting for process to complete: %s" % process)
             process.wait()
         
-        # 2) Assign to output variable if required
+        # b) Assign to output variable if required
         if output_var:
             # Read stdout from std_pipe[1] (either a file-like object or deque)
             stdout = std_pipe[1]
@@ -411,7 +608,7 @@ class pybash(pybash_cmd, pybash_parser):
             # so that it can be assigned 
             self.locals[output_var] = stdout_result 
         
-        # 3) Read and close any open file handels / python variables for stdout and stderr  
+        # c) Read and close any open file handels / python variables for stdout and stderr  
         print_fn = [self.stdout_write, self.stderr_write]
         for i in range(2):
             if std_pipe[1+1] is not None:
@@ -425,10 +622,14 @@ class pybash(pybash_cmd, pybash_parser):
                 else:
                     print_fn[i](str(std_pipe[i+1]))
     
-    # Function to get all available shell commands and store them in a searchable hash
     def available_shell_cmds(self):
+        """
+        Function to get all available shell commands and store them in the 
+        searchable dict self.shell_cmds 
+        """
+        
         # Execute compgen to get all commands
-        s, e, p = self.run_shell_cmd("compgen -A function -ack", stdout_pipe=subprocess.PIPE)
+        s, e, p = self.run_shell_cmd("compgen -A function -ack", stdout=subprocess.PIPE)
         cmd_list_str = pybash_util.read_close_fd(s)
         cmd_list = cmd_list_str.split(os.linesep)
         # Store in special hash
@@ -436,11 +637,16 @@ class pybash(pybash_cmd, pybash_parser):
         for c in cmd_list:
            self.shell_cmds[c] = 1
         self.write_debug("Loaded %i shell commands" % len(self.shell_cmds), "available_shell_cmds")
-
-    # Function to load all environment varaibles from default shell
+    
     def initialize_environment_variables(self):
+        """
+        Function to load all environment varaibles from default shell
+        and store them in the self.locals dict. This allows them to be accessed
+        by python commands and shell commands (using ${var} notation)
+        """
+        
         # Execute printenv to get all environment variables
-        s, e, p = self.run_shell_cmd("printenv", stdout_pipe=subprocess.PIPE)
+        s, e, p = self.run_shell_cmd("printenv", stdout=subprocess.PIPE)
         env_list_str = pybash_util.read_close_fd(s)
         env_list = env_list_str.split(os.linesep)
         # Store each in self.locals hash
@@ -458,14 +664,17 @@ class pybash(pybash_cmd, pybash_parser):
             self.locals[key] = val
 
 
-    # Function to get all shell aliases
-    # TODO: this does not work, can't seem to get ~/.bashrc to source from subshell
-    # Use config dict instead
     def get_shell_aliases(self):
+        """
+        Function to get all shell aliases
+        TODO: this does not work, can't seem to get ~/.bashrc to source from subshell
+        Use config dict instead
+        """
+        
         # Get the name of the shell script sourced by the default shell
         shell_source = self.cmd_flags['shell_source']
         # Source this script and print all known aliases
-        s, e, p = self.run_shell_cmd("source " + shell_source + ";\nalias;", stdout_pipe=subprocess.PIPE)
+        s, e, p = self.run_shell_cmd("source " + shell_source + ";\nalias;", stdout=subprocess.PIPE)
         alias_list_str = pybash_util.read_close_fd(s)
         print(alias_list_str)
         alias_list = alias_list_str.split()
@@ -482,13 +691,19 @@ class pybash(pybash_cmd, pybash_parser):
 
 
 
-    # This is the cmd.Cmd function that must be declared to parse arbitrary commands
     def default(self, pipeline_cmd):
+        """
+        Override the cmd.Cmd function that must be declared to parse arbitrary commands
+        """
         self.run_pipeline(pipeline_cmd)
         self.tab_complete_prompt_flag = False
         
     # Perform event designator expansion before parsing line
     def precmd(self, line):
+        """
+        Override the cmd.Cmd function which is executed before executing each line.
+        Attempt to expand event and word designators (e.g. '!!', '!$', '!echo:4')
+        """
         try:
             line = self.expand_designators(line)
         except Exception as e:
