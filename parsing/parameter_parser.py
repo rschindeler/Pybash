@@ -1,7 +1,7 @@
 import re
 
-from pybash_io import pybash_io
-import pybash_helper
+from util.std_io import pybash_io
+import util.pybash_helper
 
 # Class to handle the parsing and expansion of bash-like parameters (e.g. ${var:3})
 class parameter_parser(pybash_io):

@@ -4,39 +4,6 @@ from collections import deque
 import subprocess
 import readline
 
-def remove_history_item(line_number, initial_history_length=None):
-    """
-    Function to remove an item from the readline history 
-    since readline.remove_history_item() is not working
-
-    Args:
-        line_number (int): History line that will removed
-        initial_history_length (int): The history length recorded at the start of the pybash session,
-            used for history management.  If the removed line was prior to the initial history length, 
-            then this needs to be adjusted.
-    Returns:
-        int: If initial_history_length was provided, the adjusted initial history length is returned
-            If not, then None is returned
-    """
-    
-    # Get all history items except for the one at line_number
-    hist_len = readline.get_current_history_length()
-    new_history = [readline.get_history_item(i) for i in range(1, hist_len) if not i == line_number]
-
-    # Replace history
-    readline.clear_history()
-    for l in new_history:
-        readline.add_history(l)
-    
-    # If initial_history_length was specified, check to see if it needs to be adjusted
-    if initial_history_length:
-        if line_number < initial_history_length:
-            return initial_history_length - 1
-        else:
-            return initial_history_length
-    else:
-        return
-
 
 def display_std_pipe(std_pipe):
     """
@@ -49,30 +16,6 @@ def display_std_pipe(std_pipe):
             printed in debug messages in a short form (especially if some elements of std_pipe are a str)
     """
     return [x if (type(x) == file or type(x) == int or x is None) else type(x) for x in std_pipe]
-
-
-def shell_data(var):
-    """
-    Function to convert a python variable to a format compatible with shell commands
-    1. If input is None, return None
-    2. If input is a file, return the file
-    3. For other types, return pybash_helper.to_str(var)
-
-    Args:
-        var: Variable to be converted
-    Returns:
-        Converted variable
-    """
-    if var is not None:
-        if type(var) == file:
-            shell_data = var
-        else:
-            shell_data = pybash_helper.to_str(var)
-    else:
-        shell_data = None
-
-    return shell_data
-
 
 def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
     """
@@ -211,23 +154,6 @@ def to_bool(s):
     if s.lower() == 'false':
         return False
     raise ValueError("String %s cannot be converted to a bool" % s)
-
-def autoconvert(s):
-    """
-    Utility function for automatically converting strings to booleans, integers or floats.
-
-    Args:
-        s (str): String to be converted (e.g. 'True', '1234', '3.14159')
-
-    Returns: bool, int or float if the value could be converted, string if no conversion 
-        was found.
-    """
-    for fn in (to_bool, int, float):
-        try:
-            return fn(s)
-        except ValueError:
-            pass
-    return s
 
 def expand_deque_input(dq):
     """

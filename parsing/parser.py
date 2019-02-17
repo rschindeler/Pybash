@@ -1,12 +1,12 @@
 import re
 
-import  pybash_util
+import util.pipe_util
 
 # Some parsing functions are handeled by subclasses 
-from parser.designator_parser import designator_parser
-from parser.parameter_parser import parameter_parser
+from designator_parser import designator_parser
+from parameter_parser import parameter_parser
 
-class pybash_parser(designator_parser, parameter_parser):
+class parser(designator_parser, parameter_parser):
     """
     Class to manage parsing / expansion of commands:
      1. event and word designators (e.g. !!, !$) (designator_parser class)
@@ -82,7 +82,7 @@ class pybash_parser(designator_parser, parameter_parser):
             value = m.groups()[op_def['value_index']]
             self.write_debug("Executing op %s for fd index %i to %s" % (op_def['name'], file_d_index, value), "redirects")
 
-            pybash_util.fd_assign(file_d_index, op_def['mode'], value, std_pipe)
+            pipe_util.fd_assign(file_d_index, op_def['mode'], value, std_pipe)
             self.write_debug("Assigned file descriptor index %i = %s" % (file_d_index, std_pipe[file_d_index]), "redirects")
         
         self.write_debug("cmd_out: %s" % cmd, "redirects")

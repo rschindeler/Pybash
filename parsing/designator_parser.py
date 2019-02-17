@@ -1,8 +1,8 @@
 import re
 import readline
 
-from pybash_io import pybash_io
-import  pybash_util
+from util.std_io import pybash_io
+import util.history_util
 
 # Function to get the index of the last sequential character matching a regex,
 # optionally starting at a specific index
@@ -95,7 +95,7 @@ class designator_parser(pybash_io):
             # Replace most recent line in history
             last_line = readline.get_current_history_length()
             self.write_debug("Repalcing most recent history line %i" % last_line)
-            pybash_util.remove_history_item(last_line)
+            history_util.remove_history_item(last_line)
             readline.add_history(cmd)
             # Print the resulting cmd to stdout (bash does this!)
             self.stdout_write(cmd) 

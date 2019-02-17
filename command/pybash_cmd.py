@@ -5,9 +5,10 @@ import readline
 import atexit
 import traceback
 import argparse
-import pybash_util
+import util.conversion_util
+import util.history_util
 
-from pybash_io import pybash_io
+from util.std_io import pybash_io
 
 class pybash_cmd(Cmd, pybash_io):
     """
@@ -86,7 +87,7 @@ class pybash_cmd(Cmd, pybash_io):
         # 1) Initialize interpreter local + global "scope"
         self.locals = {}
         self.globals = {}
-        exec('import pybash_helper', self.globals, self.locals)
+        exec('import util.pybash_helper', self.globals, self.locals)
 
         # 2) Get commands and environment variables from user's default shell
         # Initialize the list of commands and aliases available in the user's shell
@@ -184,7 +185,7 @@ class pybash_cmd(Cmd, pybash_io):
             key = parts[0]
             value = parts[1]
             # Attempt to convert
-            value = pybash_util.autoconvert(value)
+            value = conversion_util.autoconvert(value)
             # Check to see if this variable must be a specific type
             if key in self.cmd_flag_types:
                 add_var = False
@@ -285,7 +286,7 @@ class pybash_cmd(Cmd, pybash_io):
         if hist_args.delete:
             self.write_debug("Clearing deleting history line %i" % hist_args.delete, "do_history")
             # Delete line and adjust initial_history_length if required
-            self.initial_history_length = pybash_util.remove_history_item(hist_args.delete, self.initial_history_length)
+            self.initial_history_length = history_util.remove_history_item(hist_args.delete, self.initial_history_length)
 
         # c) Perform history append
         if hist_args.append:
