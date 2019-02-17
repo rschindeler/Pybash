@@ -119,6 +119,19 @@ class pybash_cmd(Cmd, pybash_io):
         """
         self.stdout_write("bye")
         return True
+    
+    # Perform event designator expansion before parsing line
+    def precmd(self, line):
+        """
+        Override the cmd.Cmd function which is executed before executing each line.
+        Attempt to expand event and word designators (e.g. '!!', '!$', '!echo:4')
+        """
+        try:
+            line = self.expand_designators(line)
+        except Exception as e:
+            self.stderr_write(e)
+            self.write_debug(traceback.format_exc())
+        return line
 
     ##############################################################################
     # UTILITY FUNCTIONS

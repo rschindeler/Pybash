@@ -698,21 +698,6 @@ class pybash(pybash_cmd, pybash_parser):
         self.run_pipeline(pipeline_cmd)
         self.tab_complete_prompt_flag = False
         
-    # Perform event designator expansion before parsing line
-    def precmd(self, line):
-        """
-        Override the cmd.Cmd function which is executed before executing each line.
-        Attempt to expand event and word designators (e.g. '!!', '!$', '!echo:4')
-        """
-        try:
-            line = self.expand_designators(line)
-        except Exception as e:
-            self.stderr_write(e)
-            self.write_debug(traceback.format_exc())
-        return line
 
-# Launch main loop
-if __name__ == "__main__":
-    pybash().cmdloop()
 
 
