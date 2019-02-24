@@ -15,7 +15,7 @@ def shell_data(var):
         Converted variable
     """
     if var is not None:
-        if pipe_util.isfile(var) == file:
+        if pipe_util.isfile(var):
             shell_data = var
         else:
             shell_data = pybash_helper.to_str(var)

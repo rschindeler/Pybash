@@ -240,8 +240,13 @@ class pybash_runner(pybash_parser, pybash_io):
         # Step 3: Execute the command
         # a) Create StringIO for out/error
         # - after doing this, don't print anything until out/err are restored!
-        out = StringIO.StringIO()
-        err = StringIO.StringIO()
+        
+        if sys.version_info >= (3, 0):
+            out = StringIO()
+            err = StringIO()
+        else:
+            out = StringIO.StringIO()
+            err = StringIO.StringIO()
         # Capture out/err
         sys.stdout = out
         sys.stderr = err
