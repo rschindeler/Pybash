@@ -85,11 +85,11 @@ class pybash_runner(pybash_parser, pybash_io):
         cmd = self.parameter_expansion(cmd)
        
         self.write_debug("SHELL: %s" % cmd, "run_shell_cmd")
-        self.write_debug("INPUT: %s" % (stdin if type(stdin) == file else type(stdin)), "run_shell_cmd")
+        self.write_debug("INPUT: %s" % (stdin if pipe_util.isfile(stdin) else type(stdin)), "run_shell_cmd")
         
         # If stdin is a file descriptor, pass directly. If not, we will write stdin as a string
         if stdin:
-            if type(stdin) == file:
+            if pipe_util.isfile(stdin):
                 stdin_var = stdin
                 write_stdin = False
             else:
@@ -199,7 +199,7 @@ class pybash_runner(pybash_parser, pybash_io):
         ####################################################################
         # Step 1) Get input data, initialize __inputvar__ and __outputvar__ in self.locals
         # If the input_data is a file descriptor, read string
-        if input_var and type(input_var) == file:
+        if input_var and pipe_util.isfile(input_var):
             self.write_debug("Reading file object %s and storing as input_var" % input_var, "run_python_cmd")
             input_var = pipe_util.read_close_fd(input_var) 
         
@@ -290,7 +290,7 @@ class pybash_runner(pybash_parser, pybash_io):
                     self.write_debug("Adding src to %s queue" % name, "run_python_cmd")
                     pipe.appendleft(src)
                 # If pipe is a file-like object, write to file
-                elif type(pipe) == file:
+                elif pipe_util.isfile(pipe):
                     self.write_debug("Writing %s src to file %s" % (name, pipe), "run_python_cmd")
                     pipe.write(pybash_helper.to_str(src))
                 # If pipe is None, print using print function
@@ -305,7 +305,7 @@ class pybash_runner(pybash_parser, pybash_io):
         #    - there is no subprocess for python commands
         output = [stdout, stderr, None]
         for i in range(2):
-            if type(output[i]) == file:
+            if pipe_util.isfile(output[i]):
                 if output[i].closed is False:
                     output[i].close()
                 # Replace with None so that run_cmd() knows not to expect anything
@@ -514,7 +514,7 @@ class pybash_runner(pybash_parser, pybash_io):
         if output_var:
             # Read stdout from std_pipe[1] (either a file-like object or deque)
             stdout = std_pipe[1]
-            if type(stdout) == file:
+            if pipe_util.isfile(stdout):
                 if not stdout.closed:
                     self.write_debug("Reading file %s and assigning to output variable %s" % (stdout, output_var), "run_pipeline")
                     stdout_result = pipe_util.read_close_fd(stdout)
@@ -534,7 +534,7 @@ class pybash_runner(pybash_parser, pybash_io):
             if std_pipe[1+1] is not None:
                 self.write_debug("printing std_pipe[%i]" % (i+1), "run_pipeline") 
                 # If this is a file, check to see if open 
-                if type(std_pipe[i+1]) == file and std_pipe[i+1].closed is False:
+                if pipe_util.isfile(std_pipe[i+1]) and std_pipe[i+1].closed is False:
                     for line in iter(std_pipe[i+1].readline, ''):
                         print_fn[i](line, print_line=False)
                     std_pipe[i+1].close()

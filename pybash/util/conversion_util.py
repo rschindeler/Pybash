@@ -1,5 +1,6 @@
 # Functions for converting variable types
-import pybash.util.pybash_helper
+import pybash.util.pybash_helper as pybash_helper
+import pybash.util.pipe_util as pipe_util
 
 def shell_data(var):
     """
@@ -14,7 +15,7 @@ def shell_data(var):
         Converted variable
     """
     if var is not None:
-        if type(var) == file:
+        if pipe_util.isfile(var) == file:
             shell_data = var
         else:
             shell_data = pybash_helper.to_str(var)

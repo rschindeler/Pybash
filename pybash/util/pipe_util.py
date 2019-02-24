@@ -3,7 +3,11 @@ import pybash.util.pybash_helper
 from collections import deque
 import subprocess
 import readline
+import sys
 
+# Used for checking if variable is a file
+if sys.version_info >= (3, 0):
+    import _io
 
 def display_std_pipe(std_pipe):
     """
@@ -15,7 +19,7 @@ def display_std_pipe(std_pipe):
             are kept as-is, for others the variable type is returned. This allows the std_pipe to be
             printed in debug messages in a short form (especially if some elements of std_pipe are a str)
     """
-    return [x if (type(x) == file or type(x) == int or x is None) else type(x) for x in std_pipe]
+    return [x if (isfile(x) or type(x) == int or x is None) else type(x) for x in std_pipe]
 
 def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
     """
@@ -198,3 +202,14 @@ def expand_deque_input(dq):
         # Replace input var
         return new_input
                 
+
+def isfile(v):
+    """
+    Function to check if a variable is a file
+        * Python 2.x: variable type will be file
+        * Python 3.x: variable will be an instance of _io.TextIOWrapper
+    """
+    if sys.version_info >= (3, 0):
+        return isinstance(v, _io.TextIOWrapper)
+    else:
+        return type(v) == file

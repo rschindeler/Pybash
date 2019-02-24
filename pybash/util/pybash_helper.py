@@ -11,6 +11,7 @@ import yaml
 import readline
 import sys
 import keyword
+    
 
 def function_match(s):
     """
@@ -151,3 +152,4 @@ def show_history():
     
     for i in range(1, readline.get_current_history_length()):
         sys.stdout.write("%i %s\n" % (i, readline.get_history_item(i)))
+
