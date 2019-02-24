@@ -1,0 +1,537 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.command.pybash_cmd &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pybash.command.pybash_cmd</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">cmd</span> <span class="k">import</span> <span class="n">Cmd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">readline</span>
+<span class="kn">import</span> <span class="nn">atexit</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">pybash.util.conversion_util</span>
+<span class="kn">import</span> <span class="nn">pybash.util.history_util</span>
+
+<span class="kn">from</span> <span class="nn">pybash.util.std_io</span> <span class="k">import</span> <span class="n">pybash_io</span>
+
+<div class="viewcode-block" id="pybash_cmd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd">[docs]</a><span class="k">class</span> <span class="nc">pybash_cmd</span><span class="p">(</span><span class="n">Cmd</span><span class="p">,</span> <span class="n">pybash_io</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The pybash_cmd class forms the basis of the terminal interface </span>
+<span class="sd">       - based on the cmd.Cmd class</span>
+<span class="sd">       - custom functions: cd, exit, sudo, set, show</span>
+<span class="sd">       - extends pybash_io for stdout / stderr printing functions</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        banner (str): the banner text printed when starting interactive pybash shell</span>
+<span class="sd">        prompt_separator (str): Text printed in the command-line prompt after the file path </span>
+<span class="sd">        user_home (str): The home directory of the user, default to &#39;~&#39;</span>
+<span class="sd">        history_file (str): Path of the pybash history file</span>
+<span class="sd">        cmd_flags (dict): Dictionary that stores pybash configuration values such as:</span>
+<span class="sd">            1. debug: If True, then debug statements are printed</span>
+<span class="sd">            2. shell: UNIX shell used to execute shell commands, defaults to /bin/bash</span>
+<span class="sd">            3. max_autocomplete: limits the number of items displayed when autocompleting paths</span>
+<span class="sd">               and names before prompting user if they want to display all possibilities</span>
+<span class="sd">        cmd_flag_types (dict): Used to enforce valid variable types for the values stored in</span>
+<span class="sd">            cmd_flags (for example, debug must be a bool variable). The special &#39;file_exists&#39; str</span>
+<span class="sd">            is used to indicate str variables which represent an existing file.</span>
+<span class="sd">        </span>
+<span class="sd">        aliases (dict): Used to store shell-like aliases for common commands. Each value in aliases</span>
+<span class="sd">            is itself a dict which controls the alias behaviour for different pipeline stages:</span>
+<span class="sd">            Format: {&#39;alias_cmd&#39;: {-1: &lt;val for last pipeline stage&gt;, 0: &lt;val for other stages&gt;}}</span>
+<span class="sd">            Example: {&#39;ll&#39;:    {0: &#39;ls -lrt&#39;, -1: &#39;ls -lrt --color=auto&#39;}}</span>
+<span class="sd">            If the &#39;0&#39; or &#39;-1&#39; value is ommited, the alias is not applied for those stages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    
+    <span class="c1">####################################################################################</span>
+    <span class="c1"># DEFINITIONS</span>
+    <span class="c1">####################################################################################</span>
+    <span class="n">banner</span> <span class="o">=</span> <span class="s2">&quot;Welcome to pybash! A pythonic way to use your favourite shell&quot;</span>
+    <span class="n">prompt_separator</span> <span class="o">=</span> <span class="s2">&quot;% &quot;</span>
+    <span class="n">user_home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">)</span>
+    <span class="n">history_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_home</span><span class="p">,</span> <span class="s2">&quot;.pybash&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Dict to store flags used by the pybash interpreter</span>
+    <span class="n">cmd_flags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> 
+                 <span class="s1">&#39;shell&#39;</span><span class="p">:</span> <span class="s1">&#39;/bin/bash&#39;</span><span class="p">,</span> 
+                 <span class="s1">&#39;shell_source&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_home</span><span class="p">,</span> <span class="s1">&#39;.bashrc&#39;</span><span class="p">),</span> 
+                 <span class="s1">&#39;max_autocomplete&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+    <span class="c1"># Dict to specify which type of variable certain flags should be</span>
+    <span class="n">cmd_flag_types</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> 
+                      <span class="s1">&#39;shell&#39;</span><span class="p">:</span> <span class="s1">&#39;file_exists&#39;</span><span class="p">,</span> 
+                      <span class="s1">&#39;shell_source&#39;</span><span class="p">:</span> <span class="s1">&#39;file_exists&#39;</span><span class="p">,</span> 
+                      <span class="s1">&#39;max_autocomplete&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">}</span>
+
+    <span class="n">tab_complete_prompt_flag</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ls&#39;</span><span class="p">:</span>    <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;ls --color=auto&#39;</span><span class="p">},</span> 
+               <span class="s1">&#39;ll&#39;</span><span class="p">:</span>    <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;ls -lrt&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;ls -lrt --color=auto&#39;</span><span class="p">},</span>
+               <span class="s1">&#39;l&#39;</span><span class="p">:</span>     <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;ls -CF&#39;</span><span class="p">,</span>  <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;ls -CF --color=auto&#39;</span><span class="p">},</span>
+               <span class="s1">&#39;grep&#39;</span><span class="p">:</span>  <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;grep --color=auto&#39;</span><span class="p">},</span>
+               <span class="s1">&#39;egrep&#39;</span><span class="p">:</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;egrep --color=auto&#39;</span><span class="p">},</span>
+               <span class="s1">&#39;fgrep&#39;</span><span class="p">:</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;fgrep --color=auto&#39;</span><span class="p">}}</span>
+
+    <span class="c1">####################################################################################</span>
+    <span class="c1"># OVERRIDE CMD.CMD LOOP FUNCTIONS</span>
+    <span class="c1">####################################################################################</span>
+
+<div class="viewcode-block" id="pybash_cmd.preloop"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.preloop">[docs]</a>    <span class="k">def</span> <span class="nf">preloop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override of the cmd.Cmd function which is called when the terminal prompt loop is </span>
+<span class="sd">        first entered. Performs the following:</span>
+<span class="sd">            1. Initialize the interpreter&#39;s local and global dicts in order to maintain a separate </span>
+<span class="sd">               &quot;scope&quot; from the pybash program. Import the pybash_helper module so that it is </span>
+<span class="sd">               available when executing commands.</span>
+<span class="sd">            2. Initialize the list of commands and environment variables available in the user&#39;s </span>
+<span class="sd">               default shell.</span>
+<span class="sd">            3. Initialize history from history file </span>
+<span class="sd">            4. Update prompt and print banner</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># 1) Initialize interpreter local + global &quot;scope&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">exec</span><span class="p">(</span><span class="s1">&#39;import util.pybash_helper&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">)</span>
+
+        <span class="c1"># 2) Get commands and environment variables from user&#39;s default shell</span>
+        <span class="c1"># Initialize the list of commands and aliases available in the user&#39;s shell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">available_shell_cmds</span><span class="p">()</span>
+        <span class="c1"># Initialize environment variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_environment_variables</span><span class="p">()</span>
+        
+        <span class="c1"># 3) Initialize history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;history file: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">):</span>
+            <span class="n">readline</span><span class="o">.</span><span class="n">read_history_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_current_history_length</span><span class="p">()</span>
+        <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">readline</span><span class="o">.</span><span class="n">write_history_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">)</span>
+        
+        <span class="c1"># 4) Set default prompt and write the banner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_prompt</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">banner</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">banner</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pybash_cmd.emptyline"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.emptyline">[docs]</a>    <span class="k">def</span> <span class="nf">emptyline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override cmd.Cmd.emptyline()</span>
+<span class="sd">        By default, an empty line causes cmd.cmd to repeat the last command</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="pybash_cmd.do_EOF"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_EOF">[docs]</a>    <span class="k">def</span> <span class="nf">do_EOF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Exit on receiving EOF    </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;bye&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+    <span class="c1"># Perform event designator expansion before parsing line</span>
+<div class="viewcode-block" id="pybash_cmd.precmd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.precmd">[docs]</a>    <span class="k">def</span> <span class="nf">precmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override the cmd.Cmd function which is executed before executing each line.</span>
+<span class="sd">        Attempt to expand event and word designators (e.g. &#39;!!&#39;, &#39;!$&#39;, &#39;!echo:4&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_designators</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">line</span></div>
+
+    <span class="c1">##############################################################################</span>
+    <span class="c1"># UTILITY FUNCTIONS</span>
+    <span class="c1">##############################################################################</span>
+
+   
+<div class="viewcode-block" id="pybash_cmd.update_prompt"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.update_prompt">[docs]</a>    <span class="k">def</span> <span class="nf">update_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to update the prompt to the current working directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">cwd</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_separator</span></div>
+
+    <span class="c1">##############################################################################</span>
+    <span class="c1"># PYBASH COMMAND-LINE FUNCTIONS</span>
+    <span class="c1">##############################################################################</span>
+    
+<div class="viewcode-block" id="pybash_cmd.do_cd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_cd">[docs]</a>    <span class="k">def</span> <span class="nf">do_cd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override the cd command - working directory is tracked in python </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_prompt</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;cd: </span><span class="si">%s</span><span class="s2"> Not a directory&quot;</span> <span class="o">%</span> <span class="n">line</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pybash_cmd.do_exit"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_exit">[docs]</a>    <span class="k">def</span> <span class="nf">do_exit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Allow &#39;exit&#39; or &#39;exit()&#39; commands to quit pybash</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_EOF</span><span class="p">(</span><span class="n">line</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pybash_cmd.do_set"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_set">[docs]</a>    <span class="k">def</span> <span class="nf">do_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to update self.cmd_flags with user input. </span>
+<span class="sd">        Args: </span>
+<span class="sd">            line (str): &#39;set&#39; command arguments in the form: &#39;key = value&#39;</span>
+
+<span class="sd">        Get the key and value from the input line and validate against the required variable type</span>
+<span class="sd">        (if available) from cmd_flag_types.  If this check passes, add/set the key/value in </span>
+<span class="sd">        cmd_flags.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;Invalid set syntax: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">line</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get key and value</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Attempt to convert</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">conversion_util</span><span class="o">.</span><span class="n">autoconvert</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="c1"># Check to see if this variable must be a specific type</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flag_types</span><span class="p">:</span>
+                <span class="n">add_var</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="c1"># Check special keywords</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd_flag_types</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flag_types</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;file_exists&quot;</span><span class="p">:</span>
+                    <span class="c1"># String that points to a file that exists</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                        <span class="n">add_var</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># TODO: elif other special cases</span>
+                <span class="k">else</span><span class="p">:</span> 
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flag_types</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                        <span class="n">add_var</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Add the value if type identification was successful</span>
+                <span class="k">if</span> <span class="n">add_var</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;Key </span><span class="si">%s</span><span class="s2"> updated to </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">value</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;Key </span><span class="si">%s</span><span class="s2"> must have type </span><span class="si">%s</span><span class="s2">, got </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flag_types</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;key </span><span class="si">%s</span><span class="s2"> updated to </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">value</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="pybash_cmd.do_show"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_show">[docs]</a>    <span class="k">def</span> <span class="nf">do_show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to display self.cmd_flags</span>
+<span class="sd">        Args: </span>
+<span class="sd">            line (str): &#39;show&#39; command arguments in the form: &#39;key = value&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="n">key</span><span class="p">])))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;key </span><span class="si">%s</span><span class="s2"> not found&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pybash_cmd.do_sudo"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_sudo">[docs]</a>    <span class="k">def</span> <span class="nf">do_sudo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override shell sudo command</span>
+<span class="sd">          - if &#39;sudo -i&#39; is used, launch pybash as root</span>
+<span class="sd">          - else, run shell sudo command</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;-i&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="s2">&quot;sudo python /development/python/pybash/pybash.py&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="s2">&quot;sudo &quot;</span> <span class="o">+</span> <span class="n">line</span><span class="p">)</span></div>
+
+    <span class="c1">##############################################################################</span>
+    <span class="c1"># PYBASH HISTORY MANAGEMENT </span>
+    <span class="c1">##############################################################################</span>
+
+<div class="viewcode-block" id="pybash_cmd.do_history"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_history">[docs]</a>    <span class="k">def</span> <span class="nf">do_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Emulates the bash history command. Usage:</span>
+<span class="sd">            * -c / --clear: Clears the pybash history</span>
+<span class="sd">            * -d / --delete (int) delete a specific history line</span>
+<span class="sd">            * -a / --append [file] append all new history lines from this session to history file, </span>
+<span class="sd">              or to file specified</span>
+<span class="sd">            * -n / --new [file] read lines from history file created after pybash launched, </span>
+<span class="sd">              or from file specified </span>
+
+<span class="sd">        The line will be parsed using an argparse.ArgumentParser. If no history arguments are </span>
+<span class="sd">        given, then the history is displayed using pybash_helper.show_history(). </span>
+
+<span class="sd">        Using pybash_helper.show_history() allows for the history text to be piped to other </span>
+<span class="sd">        commands, e.g. history | tail -20</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            line (str): line containing history command with optional arguments (see above)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Step 1) Build history parser if not already done from a previous history cmd</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;history_argparser&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;history&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--clear&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--delete&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;--append&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--new&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-r&#39;</span><span class="p">,</span> <span class="s1">&#39;--read&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-w&#39;</span><span class="p">,</span> <span class="s1">&#39;--write&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+            <span class="c1"># TODO: -p, -s</span>
+
+        <span class="c1"># Step 2) Parse args in try/catch</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># If this history command is part of a pipeline, only parse arguments before the first pipe</span>
+            <span class="k">if</span> <span class="s1">&#39;|&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+                <span class="n">history_args</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">remaining_cmd</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">history_args</span> <span class="o">=</span> <span class="n">line</span>
+                <span class="n">remaining_cmd</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># Parse the history arguments</span>
+            <span class="n">hist_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_argparser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">history_args</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Catch parse_args() error, display message but do not exit program!</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;invalid history command: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">return</span>
+        
+        <span class="c1"># Step 3) Perform history operations</span>
+
+        <span class="c1"># a) Perform history clear</span>
+        <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">clear</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Clearing history&quot;</span><span class="p">,</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="c1"># Built-in readline function</span>
+            <span class="n">readline</span><span class="o">.</span><span class="n">clear_history</span><span class="p">()</span>
+        
+        <span class="c1"># b) Perform history delete</span>
+        <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">delete</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Clearing deleting history line </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">delete</span><span class="p">,</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="c1"># Delete line and adjust initial_history_length if required</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span> <span class="o">=</span> <span class="n">history_util</span><span class="o">.</span><span class="n">remove_history_item</span><span class="p">(</span><span class="n">hist_args</span><span class="o">.</span><span class="n">delete</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span><span class="p">)</span>
+
+        <span class="c1"># c) Perform history append</span>
+        <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">append</span><span class="p">:</span>
+            <span class="c1"># Manual write all history lines to file, starting at the index recorded when session started</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_current_history_length</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Appending new history lines </span><span class="si">%i</span><span class="s2"> to </span><span class="si">%i</span><span class="s2"> to file </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">append</span><span class="p">),</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">readline</span><span class="o">.</span><span class="n">get_history_item</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="c1"># d) Perform history new</span>
+        <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">new</span><span class="p">:</span>
+            <span class="c1"># Manually read lines in history file, starting at the index recorded (+1) when session started</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Read new lines </span><span class="si">%i</span><span class="s2"> and above from history file since the begining of this pybash session: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">new</span><span class="p">),</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hist_line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span><span class="p">:</span>
+                        <span class="n">readline</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="n">hist_line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+
+        <span class="c1"># e) Perform history read</span>
+        <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">read</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Read all lines from history file and append to this session&#39;s history: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">read</span><span class="p">,</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="c1"># Built-in readline function</span>
+            <span class="n">readline</span><span class="o">.</span><span class="n">read_history_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">)</span> 
+        
+        <span class="c1"># f) Perform history write</span>
+        <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">write</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Write current history to this history file, overwriting its contents: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">read</span><span class="p">,</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="c1"># Built-in readline function</span>
+            <span class="n">readline</span><span class="o">.</span><span class="n">write_history_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">)</span>
+        
+        <span class="c1"># g) Display history</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">history_args</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Display history&quot;</span><span class="p">,</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="c1"># Add the rest of the pipeline if required, then inster the pybash_helper.show_history() function</span>
+            <span class="c1">#   - this will print history + line numbers to stdout</span>
+            <span class="c1">#   - the stdout can be redirected as required</span>
+            <span class="k">if</span> <span class="n">remaining_cmd</span><span class="p">:</span>
+                <span class="n">full_line</span> <span class="o">=</span> <span class="s2">&quot;pybash_helper.show_history() | &quot;</span> <span class="o">+</span> <span class="n">remaining_cmd</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">full_line</span> <span class="o">=</span> <span class="s2">&quot;pybash_helper.show_history()&quot;</span>
+            <span class="c1"># Run the resulting command</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">full_line</span><span class="p">)</span></div>
+    
+    <span class="c1">####################################################################################</span>
+    <span class="c1"># AUTOCOMPLETE FUNCTIONS</span>
+    <span class="c1">####################################################################################</span>
+  
+    <span class="c1"># Function to take autocomplete matches and prompt the user if they want to display a large number</span>
+<div class="viewcode-block" id="pybash_cmd.within_limits"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.within_limits">[docs]</a>    <span class="k">def</span> <span class="nf">within_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="c1"># If this is a short list, return. If not, prompt user</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="s1">&#39;max_autocomplete&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">matches</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># At the completion of each command / completion, this flag is set to False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab_complete_prompt_flag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab_complete_prompt_flag</span> <span class="o">==</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tab_complete_prompt_flag</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">return</span> <span class="n">matches</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Text has changed, reset</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Hit tab again to display all </span><span class="si">%s</span><span class="s2"> possibilities&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">+</span> <span class="n">text</span><span class="p">,</span> <span class="n">print_line</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tab_complete_prompt_flag</span> <span class="o">=</span> <span class="n">text</span>
+                    <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Prompt user if they want to see all possibilities</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Hit tab again to display all </span><span class="si">%s</span><span class="s2"> possibilities&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">+</span> <span class="n">text</span><span class="p">,</span> <span class="n">print_line</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tab_complete_prompt_flag</span> <span class="o">=</span> <span class="n">text</span>
+                <span class="k">return</span> <span class="p">[]</span></div>
+
+
+    <span class="c1"># Function to perform autocomplete for file paths</span>
+    <span class="c1"># line: entire line buffer</span>
+    <span class="c1"># text: text in line between begidx and endidx (current completion context)</span>
+    <span class="c1">#   - the completion context is determined by readline.get_completer_delims()</span>
+    <span class="c1">#     which define how line is split to get the start of the word to be considered for completion</span>
+<div class="viewcode-block" id="pybash_cmd.autocomplete_path"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.autocomplete_path">[docs]</a>    <span class="k">def</span> <span class="nf">autocomplete_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">,</span> <span class="n">require_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">require_dir</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Get the surounding context for text</span>
+            <span class="c1">#   e.g. if it is part of a larger file path</span>
+            <span class="c1"># get all space characters that are before begidx</span>
+            <span class="n">spaces</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">begidx</span><span class="p">)</span> <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">spaces</span><span class="p">:</span>
+                <span class="n">prev_space</span> <span class="o">=</span> <span class="n">spaces</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">prev_space</span><span class="p">:</span><span class="n">begidx</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">full_text</span> <span class="o">=</span> <span class="n">context</span> <span class="o">+</span> <span class="n">text</span>
+
+            <span class="c1"># If full_text is an existing directory and it is explicitly typed (i.e. ends with &#39;/&#39;), look inside</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">full_text</span><span class="p">)</span> <span class="ow">and</span> <span class="n">full_text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">):</span>
+               <span class="c1"># Look in this dir directly</span>
+               <span class="c1">#self.write_debug(&quot;Searching for contents of %s&quot; % full_text, &quot;autocomplete_path&quot;)</span>
+               <span class="n">contents</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">full_text</span><span class="p">)</span>
+               <span class="n">base_dir</span> <span class="o">=</span> <span class="n">full_text</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Look in the base directory of this path, filter by remaining text</span>
+                <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">full_text</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
+                    <span class="c1"># Look for matching files in this directory</span>
+                    <span class="n">search_pattern</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">full_text</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Look to see if there are matching files</span>
+                    <span class="n">search_pattern</span> <span class="o">=</span> <span class="n">full_text</span>
+                    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+                <span class="c1"># Get dir contents, filter</span>
+                <span class="k">if</span> <span class="n">search_pattern</span><span class="p">:</span>
+                    <span class="c1"># self.write_debug(&quot;Searching for %s in %s&quot; % (search_pattern, base_dir))</span>
+                    <span class="n">contents</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">search_pattern</span><span class="p">)]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># self.write_debug(&quot;Searching for everything in %s&quot; % (base_dir))</span>
+                    <span class="c1"># If there is no search pattern, match everything</span>
+                    <span class="n">contents</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">)</span>
+            
+            <span class="c1"># Optionally filter by file / dir</span>
+            <span class="k">if</span> <span class="n">require_file</span><span class="p">:</span>
+                <span class="n">contents</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">contents</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span><span class="n">f</span><span class="p">))]</span>
+            <span class="k">if</span> <span class="n">require_dir</span><span class="p">:</span>
+                <span class="n">contents</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">contents</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span><span class="n">d</span><span class="p">))]</span>
+            
+            <span class="c1"># Filter within limits and return</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">within_limits</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+
+
+    <span class="c1"># Override completedefault() to match against file paths </span>
+<div class="viewcode-block" id="pybash_cmd.completedefault"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.completedefault">[docs]</a>    <span class="k">def</span> <span class="nf">completedefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocomplete_path</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">)</span></div>
+    
+    <span class="c1"># For the cd command, require directories</span>
+<div class="viewcode-block" id="pybash_cmd.complete_cd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.complete_cd">[docs]</a>    <span class="k">def</span> <span class="nf">complete_cd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocomplete_path</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">,</span> <span class="n">require_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+    <span class="c1"># Override completenames() to check against pybash commands and shell commands</span>
+<div class="viewcode-block" id="pybash_cmd.completenames"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.completenames">[docs]</a>    <span class="k">def</span> <span class="nf">completenames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="o">*</span><span class="n">ignored</span><span class="p">):</span>
+        <span class="c1"># Require at least one character be typed before completing names</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># Get matching pybash functions and shell commands</span>
+        <span class="n">pybash_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_names</span><span class="p">()</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;do_&#39;</span> <span class="o">+</span> <span class="n">text</span><span class="p">)]</span>
+        <span class="n">shell_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">text</span><span class="p">)]</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pybash_matches</span> <span class="o">+</span> <span class="n">shell_matches</span><span class="p">))</span>
+        
+        <span class="c1"># Check limits and display</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">within_limits</span><span class="p">(</span><span class="n">matches</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span> </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

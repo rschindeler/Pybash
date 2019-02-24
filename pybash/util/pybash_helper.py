@@ -15,6 +15,7 @@ import keyword
 def function_match(s):
     """
     Function used by pybash to determine if a command is a pybash_helper function
+    
     Args:
         s (str): Command string which may contain pybash helper functions
     Returns:
@@ -31,6 +32,7 @@ def function_match(s):
 def python_keyword_match(c):
     """
     Function used by pybash to check if a command is a python keyword
+    
     Args:
         c (str): Command which is matched against python keywords
     Returns:
@@ -44,6 +46,7 @@ def python_keyword_match(c):
 def to_list(s, ignore_empty_lines=True):
     """
     Function to convert newline-separated string to a python list.
+    
     Args:
         s (str): Input string to convert to list
         ignore_empty_lines (bool): If True, then empty text lines are not included in output list
@@ -58,6 +61,7 @@ def to_list(s, ignore_empty_lines=True):
 def to_dict(s):
     """
     Function to convert a yaml-formatted string to a dict
+    
     Args:
         s (str): Input string to convert to dict
     Returns:
@@ -71,21 +75,23 @@ def to_str(v, single_line=False):
     """
     Function to convert input variable to string, using special formating for dicts and lists.
     TODO: Add support for json
+    
     Args:
         v: input variable to convert to string
         single_line (bool): If this flag is True, the variable will be formatted without newlines. 
             1. Dict: converted to string using yaml.dump()
-                - single_line = True: use default_flow_style=True
-                - single_line = False: use default_flow_style=False
+                a) single_line = True: use default_flow_style=True
+                b) single_line = False: use default_flow_style=False
             2. List
-                - single_line = True: Use ' ' to separate elements (used for bash-like formatting)
-                - single_line = False: Use '\n' to separate elements (used for writing to file)
-            3. Other variable types:
-                - Converted to string using str()
+                a) single_line = True: Use space character to separate elements (used for bash-like formatting)
+                b) single_line = False: Use newline character to separate elements (used for writing to file)
+            3. Other variable types: Converted to string using str()
             
     Returns:
         String representation of input variable
+
     """
+    
     if type(v) == dict:
         if single_line:
             return yaml.dump(v, default_flow_style=True).strip()
@@ -107,6 +113,7 @@ def to_str(v, single_line=False):
 def to_file(f_name, d, mode='w'):
     """
     Function to write a python variable to a file
+    
     Args: 
         f_name (str): File path to write to
         d: Python variable to write to file, will be automatically converted to a string for writing
@@ -122,6 +129,7 @@ def to_file(f_name, d, mode='w'):
 def from_file(f_name, mode='r'):
     """
     Function to read a file and return the contents as a strting
+    
     Args: 
         f_name (str): File path to read from
         mode (str): Mode to read the file ('r', 'rb'), default = 'r'

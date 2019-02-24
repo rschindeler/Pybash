@@ -1,0 +1,387 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.parsing.designator_parser &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pybash.parsing.designator_parser</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">readline</span>
+
+<span class="kn">from</span> <span class="nn">pybash.util.std_io</span> <span class="k">import</span> <span class="n">pybash_io</span>
+<span class="kn">import</span> <span class="nn">pybash.util.history_util</span>
+
+<span class="c1"># Function to get the index of the last sequential character matching a regex,</span>
+<span class="c1"># optionally starting at a specific index</span>
+<span class="c1"># For exmaple, find the last numeric character in a string:</span>
+<span class="c1">#   last_matching_char(&#39;[0-9]&#39;, &#39;asdf1234qwer&#39;, 4)</span>
+<span class="c1">#   would match &#39;4&#39; at index 7</span>
+<div class="viewcode-block" id="last_matching_char"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.designator_parser.last_matching_char">[docs]</a><span class="k">def</span> <span class="nf">last_matching_char</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="k">while</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+<span class="c1"># Class to manage parsing bash-like event and word designators</span>
+<div class="viewcode-block" id="designator_parser"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.designator_parser.designator_parser">[docs]</a><span class="k">class</span> <span class="nc">designator_parser</span><span class="p">(</span><span class="n">pybash_io</span><span class="p">):</span>
+    
+    <span class="c1"># Function to expand bash-like event and word designators such as !!:3, !$ !!</span>
+    <span class="c1"># REF: https://www.gnu.org/software/bash/manual/bashref.html#Event-Designators</span>
+<div class="viewcode-block" id="designator_parser.expand_designators"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.designator_parser.designator_parser.expand_designators">[docs]</a>    <span class="k">def</span> <span class="nf">expand_designators</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+        <span class="c1"># If any expansion is done, replace history line at the end</span>
+        <span class="n">expansion_performed</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Loop until there are no more &#39;!&#39; in cmd</span>
+        <span class="n">parse_start_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1">###########################################################################</span>
+            <span class="c1"># Step 1) Find the begining of a history event designator </span>
+            <span class="c1"># Starting at parse_start_index, find the first index of &#39;!&#39; in cmd</span>
+            <span class="n">loc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">parse_start_index</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">cmd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;!&#39;</span> <span class="ow">or</span> <span class="n">cmd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;^&#39;</span><span class="p">:</span>
+                    <span class="n">loc</span> <span class="o">=</span> <span class="n">i</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">loc</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Found &#39;!&#39; in cmd at index </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">loc</span><span class="p">)</span>
+            
+            <span class="c1">###########################################################################</span>
+            <span class="c1"># Step 2) Determine the correct history line index to use</span>
+            <span class="c1">#   - output: </span>
+            <span class="c1">#      - history_line: readline history index</span>
+            <span class="c1">#      - next_loc: next character location to parse</span>
+            <span class="c1">#      - parse_word_designator: flag which is set if short-form word designator is found</span>
+            <span class="n">history_line</span><span class="p">,</span> <span class="n">next_loc</span><span class="p">,</span> <span class="n">parse_word_designator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_event_designator</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">loc</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Using history line </span><span class="si">%s</span><span class="s2">, next character location to parse: </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">history_line</span><span class="p">,</span> <span class="n">next_loc</span><span class="p">))</span>
+
+            <span class="c1"># If nothing found, skip</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">history_line</span><span class="p">:</span>
+                <span class="c1"># Update the parsing start index for the next iteration</span>
+                <span class="n">parse_start_index</span> <span class="o">=</span> <span class="n">next_loc</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Set this flag so that history will be updated with the expansion</span>
+                <span class="n">expansion_performed</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1">###########################################################################</span>
+            <span class="c1"># Step 3) Get the history line to replace - special case for !#</span>
+            <span class="k">if</span> <span class="n">history_line</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">replace_val</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">loc</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Get the entire history line before processing word designators</span>
+                <span class="k">if</span> <span class="n">history_line</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">history_line</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_current_history_length</span><span class="p">()</span> <span class="o">+</span> <span class="n">history_line</span>
+                <span class="n">replace_val</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_history_item</span><span class="p">(</span><span class="n">history_line</span><span class="p">)</span>
+            
+            <span class="c1">###########################################################################</span>
+            <span class="c1"># Step 4) Parse word designators</span>
+            <span class="c1"># Check for a &#39;:&#39; after the event designator</span>
+            <span class="c1">#  - Note: The parse_word_designator may have already been set if using a shortform</span>
+            <span class="k">if</span> <span class="n">next_loc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+                <span class="n">parse_word_designator</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">next_loc</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">parse_word_designator</span><span class="p">:</span>
+                <span class="n">next_loc</span><span class="p">,</span> <span class="n">replace_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_word_designator</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">next_loc</span><span class="p">,</span> <span class="n">replace_val</span><span class="p">)</span>
+           
+            <span class="c1">###########################################################################</span>
+            <span class="c1"># Step 5) Perform expansion</span>
+            <span class="k">if</span> <span class="n">next_loc</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">loc</span><span class="p">]</span> <span class="o">+</span> <span class="n">replace_val</span> <span class="o">+</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">loc</span><span class="p">]</span> <span class="o">+</span> <span class="n">replace_val</span> 
+            
+            <span class="c1"># Update the parsing start index for the next iteration</span>
+            <span class="n">parse_start_index</span> <span class="o">=</span> <span class="n">next_loc</span>
+        
+        <span class="c1"># Done parsing - edit history if required</span>
+        <span class="k">if</span> <span class="n">expansion_performed</span><span class="p">:</span>
+            <span class="c1"># Replace most recent line in history</span>
+            <span class="n">last_line</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_current_history_length</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Repalcing most recent history line </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">last_line</span><span class="p">)</span>
+            <span class="n">history_util</span><span class="o">.</span><span class="n">remove_history_item</span><span class="p">(</span><span class="n">last_line</span><span class="p">)</span>
+            <span class="n">readline</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+            <span class="c1"># Print the resulting cmd to stdout (bash does this!)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> 
+        
+        <span class="c1"># Done parsing, return modified command</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
+        
+
+    <span class="c1"># Function to perform event designator expansion</span>
+    <span class="c1"># Input:</span>
+    <span class="c1">#   - cmd: the command being parsed</span>
+    <span class="c1">#   - loc: the current character index to parsethe event designator</span>
+    <span class="c1"># Output:</span>
+    <span class="c1">#   - history_line: the line selected from the history to be substitued</span>
+    <span class="c1">#   - next_loc: location of the next character in cmd to be parsed</span>
+    <span class="c1">#   - parse_word_designator: flag that is set if a short-form word designator is detected</span>
+<div class="viewcode-block" id="designator_parser.expand_event_designator"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.designator_parser.designator_parser.expand_event_designator">[docs]</a>    <span class="k">def</span> <span class="nf">expand_event_designator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">loc</span><span class="p">):</span>
+        <span class="c1"># Set this flag to False by default - will be set tyo True if short-form word designator is found</span>
+        <span class="n">parse_word_designator</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Set to None for now - if it not set by any of the conditions bellow, this designator will be skipped</span>
+        <span class="n">history_line</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Regex definitions</span>
+        <span class="n">num_re</span> <span class="o">=</span> <span class="s1">&#39;[0-9]&#39;</span>
+        <span class="n">alph_re</span> <span class="o">=</span> <span class="s1">&#39;[a-zA-Z]&#39;</span>
+
+        <span class="c1"># TODO: ^string1^string2^</span>
+       
+        <span class="c1"># Check reference to history line (or relative history line) </span>
+        <span class="c1">#   e.g. !100, !-2</span>
+        <span class="k">if</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">num_re</span><span class="p">,</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]):</span> 
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">last_matching_char</span><span class="p">(</span><span class="n">num_re</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">loc</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">history_line</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">next_loc</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;previous line&#39; event designator: </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">history_line</span><span class="p">,</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check for short-form word designator</span>
+        <span class="c1">#   e.g. !$, !*</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;^&#39;</span><span class="p">,</span> <span class="s1">&#39;$&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;%&#39;</span><span class="p">]:</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;short form&#39; word designator &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+            <span class="n">history_line</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">parse_word_designator</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Check reference to previous command</span>
+        <span class="c1">#   e.g. !!</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;!&#39;</span><span class="p">:</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="mi">2</span>
+            <span class="n">history_line</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;previous command&#39; event designator&quot;</span><span class="p">,</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+        <span class="c1"># Check for short form - next character will be a &#39;:&#39;</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="mi">2</span>
+            <span class="n">history_line</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">parse_word_designator</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;previous command&#39; event designator with shortform word designator&quot;</span><span class="p">,</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+        <span class="c1"># Check for reference to history line starting with a string</span>
+        <span class="c1">#   e.g. !pattern</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">alph_re</span><span class="p">,</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">last_matching_char</span><span class="p">(</span><span class="n">alph_re</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">next_loc</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;previous line starts with&#39; event designator: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">pattern</span><span class="p">,</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Search for pattern in history (backwards starting with most recent history item)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">readline</span><span class="o">.</span><span class="n">get_current_history_length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">h_line</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_history_item</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">h_line</span> <span class="ow">and</span> <span class="n">h_line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+                    <span class="n">history_line</span> <span class="o">=</span> <span class="n">i</span>
+                    <span class="k">break</span>
+
+        <span class="c1"># Check for reference to history line containing a string</span>
+        <span class="c1">#   e.g. !?pattern[?]</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">last_matching_char</span><span class="p">(</span><span class="s1">&#39;[^\?]&#39;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">loc</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="n">next_loc</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;previous line search&#39; event designator: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">pattern</span><span class="p">,</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Search for pattern in history (backwards starting with most recent history item)</span>
+            <span class="n">history_line</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">readline</span><span class="o">.</span><span class="n">get_current_history_length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">h_line</span> <span class="o">=</span> <span class="n">readline</span><span class="o">.</span><span class="n">get_history_item</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">h_line</span><span class="p">:</span>
+                    <span class="n">history_line</span> <span class="o">=</span> <span class="n">i</span>
+                    <span class="c1"># Keep track of the word that was matched: used for &#39;%&#39; word designator</span>
+                    <span class="n">matching_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">h_line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">w</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matching_words</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">last_matching_history_search</span> <span class="o">=</span> <span class="n">matching_words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">break</span>
+
+        <span class="c1"># Check for reference to entire command line typed so far</span>
+        <span class="c1">#   e.g. !#</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">loc</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="mi">2</span>
+            <span class="c1"># Set history line to True - this indicates the current line</span>
+            <span class="n">history_line</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanding &#39;line so far&#39; event designator&quot;</span><span class="p">,</span> <span class="s2">&quot;expand_designators&quot;</span><span class="p">)</span>
+
+        
+        <span class="k">return</span> <span class="n">history_line</span><span class="p">,</span> <span class="n">next_loc</span><span class="p">,</span> <span class="n">parse_word_designator</span></div>
+
+    <span class="c1"># Function to perform word designator expansion</span>
+    <span class="c1"># Inputs: </span>
+    <span class="c1">#   cmd: the command that is being parsed</span>
+    <span class="c1">#   next_loc: the next character index to be parsed (after event designator has been parsed)</span>
+    <span class="c1">#   replace_val: the line of text that was generated by the event designator</span>
+    <span class="c1">#</span>
+    <span class="c1"># Output:</span>
+    <span class="c1">#    next_loc: updated character index after parsing word designator</span>
+    <span class="c1">#    replace_val: one or more words selected from the input replace_val</span>
+    <span class="c1">#</span>
+    <span class="c1"># For example: !!, !$, !!:4-5</span>
+<div class="viewcode-block" id="designator_parser.expand_word_designator"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.designator_parser.designator_parser.expand_word_designator">[docs]</a>    <span class="k">def</span> <span class="nf">expand_word_designator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">next_loc</span><span class="p">,</span> <span class="n">replace_val</span><span class="p">):</span> 
+        <span class="c1"># Check for &quot;entire command&quot;</span>
+        <span class="k">if</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;!&#39;</span><span class="p">:</span>
+            <span class="c1"># no change</span>
+            <span class="n">next_loc</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Check for &quot;last argument&quot; pattern &#39;$&#39;</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;$&#39;</span><span class="p">:</span>
+            <span class="n">replace_val</span> <span class="o">=</span> <span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">next_loc</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Check for &quot;first argument&quot; pattern &#39;^&#39;</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;^&#39;</span><span class="p">:</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">next_loc</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">replace_val</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: ^&quot;</span><span class="p">)</span>
+        <span class="c1"># Check for &quot;last match&quot; pattern &#39;%&#39;</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;%&#39;</span><span class="p">:</span>
+            <span class="n">next_loc</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;last_matching_history_search&#39;</span><span class="p">):</span>
+                <span class="n">replace_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_matching_history_search</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: % (no previous history search)&quot;</span><span class="p">)</span>
+        <span class="c1"># Check for &quot;all arguments&quot; pattern &#39;*&#39;</span>
+        <span class="k">elif</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">next_loc</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">replace_val</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: ^&quot;</span><span class="p">)</span>
+        <span class="c1"># Check for numeric pattern (allowing for x-y, x*, x-$)</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;[\*$\-0-9]&#39;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">[</span><span class="n">next_loc</span><span class="p">]):</span>
+            <span class="c1"># Isolate numeric word designator</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">next_loc</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">last_matching_char</span><span class="p">(</span><span class="s1">&#39;[\*$\-0-9]&#39;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">next_loc</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">word_designator</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Processing numeric word designator </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+            <span class="n">next_loc</span> <span class="o">=</span> <span class="n">end</span>
+            <span class="c1"># Get range of words </span>
+            <span class="c1"># Simple case - number only</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;[0-9]+$&#39;</span><span class="p">,</span> <span class="n">word_designator</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s1">&#39;Got simple numeric word designator: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">word_designator</span><span class="p">))</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parts</span> <span class="o">=</span> <span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">replace_val</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">word_designator</span><span class="p">)]</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+            <span class="c1"># Check for x-y pattern</span>
+            <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;[0-9\$]+-[0-9\$]+$&#39;</span><span class="p">,</span> <span class="n">word_designator</span><span class="p">):</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">word_designator</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s1">&#39;Got start and end numeric word designator: </span><span class="si">%s</span><span class="s1"> to </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parts</span> <span class="o">=</span> <span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="c1"># Replace &#39;$&#39;</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="s1">&#39;$&#39;</span> <span class="k">else</span> <span class="n">start</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="s1">&#39;$&#39;</span> <span class="k">else</span> <span class="n">end</span>
+                    <span class="c1"># Get range</span>
+                    <span class="n">replace_val</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">):</span><span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+            <span class="c1"># Check for &#39;-y&#39; pattern (short for &#39;x-y&#39;)</span>
+            <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;-[0-9\$]+$&#39;</span><span class="p">,</span> <span class="n">word_designator</span><span class="p">):</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">word_designator</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parts</span> <span class="o">=</span> <span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="c1"># Replace &#39;$&#39;</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="s1">&#39;$&#39;</span> <span class="k">else</span> <span class="n">end</span>
+                    <span class="c1"># Get range</span>
+                    <span class="n">replace_val</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+            <span class="c1"># Check for &#39;x*&#39; pattern (short for &#39;x-$&#39;)</span>
+            <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;([0-9]+)\*$&#39;</span><span class="p">,</span> <span class="n">word_designator</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">word_designator</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">replace_val</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">):])</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+            <span class="c1"># Check for &#39;x*&#39; pattern (short for &#39;x-$&#39;)</span>
+            <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;([0-9]+)-$&#39;</span><span class="p">,</span> <span class="n">word_designator</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">word_designator</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">replace_val</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">replace_val</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">):</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;bad word specifier: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">word_designator</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Word designator result: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">replace_val</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">next_loc</span><span class="p">,</span> <span class="n">replace_val</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

@@ -46,6 +46,7 @@ class pybash_io:
     def write_debug(self, msg, fn=None):
         """
         Function to write a pybash debug message to stdout
+        
         Args:
             msg (str): Debug message text
             fn (str): Optional string used to print the function generating the debug message

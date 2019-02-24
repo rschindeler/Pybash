@@ -2,20 +2,26 @@ import subprocess
 import re
 import os
 import sys
-import StringIO
 from collections import deque
 import traceback
 import copy
 
+try:
+    # Python 2
+    import StringIO
+except ImportError:
+    # Python 3
+    from io import StringIO
+
 # Import pybash helper and utility functions
-import util.pybash_helper as pybash_helper
-import util.pipe_util as pipe_util
-import util.conversion_util as conversion_util
+import pybash.util.pybash_helper as pybash_helper
+import pybash.util.pipe_util as pipe_util
+import pybash.util.conversion_util as conversion_util
 
 # Import pybash sub-classes
-from pybash_cmd import pybash_cmd
-from parsing.parser import parser as pybash_parser
-from util.std_io import pybash_io
+from pybash.command.pybash_cmd import pybash_cmd
+from pybash.parsing.parser import parser as pybash_parser
+from pybash.util.std_io import pybash_io
 
 
 #class pybash_runner(pybash_cmd, pybash_parser):
@@ -35,36 +41,36 @@ class pybash_runner(pybash_parser, pybash_io):
             cmd (str): the shell command to execute (may contain bash-like parameters such as ${var}
             std_pipe (list): list used to pass [std_in, stdout, stderr] if all three
                 are available / requried
-            stdin: the standard input to pass to the shell command. this may be:
-                1. file-like object (open python file or pipe), passed directly to 
-                    subprocess.popen()
-                2. python variable that can be converted to a string with str(). this will written 
-                    to using process.stdin.write() after the process is started.
-                3. none: no input is provided to the subprocess.
-            stdout: the destination of the standard output that will be returned by the shell 
+            stdin: The standard input to pass to the shell command. This may be:
+                    1. File-like object (open python file or pipe), passed directly to subprocess.popen()
+                    2. Python variable that can be converted to a string with str(). This will written 
+                       to using process.stdin.write() after the process is started.
+                    3.None: no input is provided to the subprocess.
+            stdout: The destination of the standard output that will be returned by the shell 
                 command. This may be:
-                1. file-like object (open python file or pipe), passed subprocess.popen()
-                2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()
-                3. tuple: this represents an already-existing pipe (read,write), output written 
-                    to stdout[1]
-                4. none: stdout will be written to sys.stdout (i.e. the terminal) 
+                    1. File-like object (open python file or pipe), passed subprocess.popen()
+                    2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()
+                    3. tuple: this represents an already-existing pipe (read,write), output written 
+                       to stdout[1]
+                    4. None: stdout will be written to sys.stdout (i.e. the terminal) 
             stderr: the destination of the standard error that will be returned by the shell command.
-                    This may be:
-                1. file-like object (open python file or pipe), passed subprocess.popen()
-                2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()
-                3. tuple: this represents an already-existing pipe (read,write), output written 
-                    to stderr[1]
-                4. none: stderr will be written to sys.stderr (i.e. the terminal) 
+                This may be:
+                    1. file-like object (open python file or pipe), passed subprocess.popen()
+                    2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()
+                    3. tuple: this represents an already-existing pipe (read,write), output written 
+                       to stderr[1]
+                    4. none: stderr will be written to sys.stderr (i.e. the terminal) 
             
     
         Returns:
             tuple: file-like objects for stdout, stderr and the process opened by subprocess.popen()
-                (stdout, stderr, process)
+            (stdout, stderr, process)
                 1. if stdout / stderr file-like objects were passed to run_shell_cmd(), 
-                    the same objects are returned
+                   the same objects are returned
                 2. if subprocess.PIPE was passed to run_shell_cmd(), the read file handel of the 
-                    newly-created os.pipe() is returned.
+                   newly-created os.pipe() is returned.
                 3. if none was passed to run_shell_cmd(), then none is returned.
+        
         """
         
         # Expand std_pipe, create pipes, handle redirects
@@ -130,9 +136,9 @@ class pybash_runner(pybash_parser, pybash_io):
     def run_python_cmd(self, cmd, std_pipe=None, input_var=None, stdout=None, stderr=None):
         """
         Function to execute a python command, accepting an input variable and returning:
-        1. Result of python command
-        2. stdout of python command
-        3. stderr of python command
+            1. Result of python command
+            2. stdout of python command
+            3. stderr of python command
 
         The python command is executed using exec(cmd, self.globals, self.local) in order to maintain 
         a separate "varable space" from the pybash program.
@@ -146,43 +152,43 @@ class pybash_runner(pybash_parser, pybash_io):
                 are available / requried
             input_var: The input variable to the python command, which acts similarily to stdin for
                 a shell command. This may be:
-                1. file-like object (open python file or pipe), which will be read and converted 
-                    to a string
-                2. python variable that will be passed directly
-                3. none: no input is provided to the python command
+                    1. File-like object (open python file or pipe), which will be read and converted 
+                       to a string
+                    2. Python variable that will be passed directly
+                    3. None: no input is provided to the python command
             stdout: The destination of the result(s) of the python command. 
                 This may be:
-                1. file-like object (open python file or pipe), result(s) of python command will 
-                    be written here
-                2. subprocess.PIPE: a new collections.deque object will be created and result(s)
-                    of python command will be written here 
-                3. collections.deque object, result(s) of python command will be written here
-                4. none: stdout will be written to sys.stdout (i.e. the terminal) 
+                    1. File-like object (open python file or pipe), result(s) of python command will 
+                       be written here
+                    2. subprocess.PIPE: a new collections.deque object will be created and result(s)
+                       of python command will be written here 
+                    3. collections.deque object, result(s) of python command will be written here
+                    4. None: stdout will be written to sys.stdout (i.e. the terminal) 
             stderr: The destination of the standard error generated by the python command.
                 This may be:
-                1. file-like object (open python file or pipe), stderr of python command will 
-                    be written here
-                2. subprocess.PIPE: a new collections.deque object will be created and stderr
-                    of python command will be written here 
-                3. collections.deque object, stderr of python command will be written here
-                4. none: stdout will be written to sys.stdout (i.e. the terminal) 
+                    1. File-like object (open python file or pipe), stderr of python command will 
+                       be written here
+                    2. subprocess.PIPE: a new collections.deque object will be created and stderr
+                       of python command will be written here 
+                    3. collections.deque object, stderr of python command will be written here
+                    4. None: stdout will be written to sys.stdout (i.e. the terminal) 
             
     
         Returns:
-            tuple: file-like objects for stdout, stderr
-                (stdout, stderr, None)
-                Note: Since run_python_cmd() does not execute in a subprocess, no process is returned by this function.
-                stdout and stderr are collections.deque objects, which typically have only one element.  Additional elements
-                are added by using redirects. For example, you can redirect the command's stderr to the stdout deque object.
+            tuple: File-like objects for stdout, stderr (stdout, stderr, None)
+                
+            .. note:: Since run_python_cmd() does not execute in a subprocess, no process is returned by this function.
+            stdout and stderr are collections.deque objects, which typically have only one element.  Additional elements
+            are added by using redirects. For example, you can redirect the command's stderr to the stdout deque object.
 
-                The stdout deque may contain (one or both): 
+            The stdout deque may contain (one or both): 
                 a) the result of evaluating a python statement (e.g. if cmd = '2+4', stdout = 6)
                 b) the stdout resulting from executing the python statement (e.g. if cmd = 'print("foo")', stdout = 'foo')
-                
-                For example, if executing a function that contains a print() statement as well as returning a value, the
-                stdout deque will contain both the return value and the printed text.
+            
+            For example, if executing a function that contains a print() statement as well as returning a value, the
+            stdout deque will contain both the return value and the printed text.
 
-                The stderr deque will contain the errors generated by the python command (e.g. exception text)
+            The stderr deque will contain the errors generated by the python command (e.g. exception text)
 
         """
         
@@ -311,18 +317,21 @@ class pybash_runner(pybash_parser, pybash_io):
     def run_cmd(self, cmd, std_pipe=None, input_data=None, stdout=None, stderr=None, last_cmd=False):
         """
         Function to execute a single shell or python command and return the output in a pipe.
-        Note: A "single command" is one that does not contain a pipeline
+        .. note:: A "single command" is one that does not contain a pipeline
         
         This function performs the following:
-        1. Validate and standardize the input variables 
-            1. Combine input variables into std_pipe list
-            2. Expand any deque inputs using pipe_util.expand_deque_input()
-        2. Sub-in shell aliases if possible
-        3. Determine if the command should be executed as a shell command or python command
-            1. Commands including pybash helper functions are executed in python
-            2. Commands whose first word is a known shell command is executed in a shell subprocess
-            3. Any other commands are executed in python
+            1. Validate and standardize the input variables 
+                a) Combine input variables into std_pipe list
+                b) Expand any deque inputs using pipe_util.expand_deque_input()
+            2. Sub-in shell aliases if possible
+            3. Determine if the command should be executed as a shell command or python command
+                a) Commands including pybash helper functions are executed in python
+                b) Commands whose first word is a known shell command is executed in a shell subprocess
+                c) Any other commands are executed in python
 
+        See run_python_cmd() and run_bash_cmd() for more information on input arguments
+        and return types.
+        
         Args:
             cmd (str): the shell or python  command to execute
             std_pipe (list): list used to pass [input_data, stdout, stderr] if all three
@@ -338,8 +347,6 @@ class pybash_runner(pybash_parser, pybash_io):
                 generated by the command. process is only used for run_shell_cmd() which
                 executes as a subprocess.
         
-        See run_python_cmd() and run_bash_cmd() for more information on input arguments
-        and return types.
 
         """
         ############################################################################
@@ -419,11 +426,11 @@ class pybash_runner(pybash_parser, pybash_io):
         Function to execute a combined shell-python command pipeline
         
         Examples:
-        * py_var = 5 + 4
-        * cat test.txt | grep str | tail -n 5 >> out_file.txt
-        * grep -nr str | head -n 5 | py_var
-        * py_var = grep -nr str | head -n 5
-        * cat test.txt | grep myvar | cut -d '=' -f2 | py_function(@)
+            * py_var = 5 + 4
+            * cat test.txt | grep str | tail -n 5 >> out_file.txt
+            * grep -nr str | head -n 5 | py_var
+            * py_var = grep -nr str | head -n 5
+            * cat test.txt | grep myvar | cut -d '=' -f2 | py_function(@)
         
         This function breaks the pipeline into individual commands, and handels
         the redirects, piping between commands, and assignment to python variables.
@@ -539,6 +546,7 @@ class pybash_runner(pybash_parser, pybash_io):
         """
         Function to get all available shell commands and store them in the 
         searchable dict self.shell_cmds 
+
         """
         
         # Execute compgen to get all commands
@@ -582,6 +590,7 @@ class pybash_runner(pybash_parser, pybash_io):
         Function to get all shell aliases
         TODO: this does not work, can't seem to get ~/.bashrc to source from subshell
         Use config dict instead
+
         """
         
         # Get the name of the shell script sourced by the default shell

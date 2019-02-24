@@ -1,0 +1,373 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.parsing.parameter_parser &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pybash.parsing.parameter_parser</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">from</span> <span class="nn">pybash.util.std_io</span> <span class="k">import</span> <span class="n">pybash_io</span>
+<span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span>
+
+<span class="c1"># Class to handle the parsing and expansion of bash-like parameters (e.g. ${var:3})</span>
+<div class="viewcode-block" id="parameter_parser"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser">[docs]</a><span class="k">class</span> <span class="nc">parameter_parser</span><span class="p">(</span><span class="n">pybash_io</span><span class="p">):</span>
+
+    <span class="c1"># Function to perform bash-like parameter expansion</span>
+    <span class="n">shell_param_regex</span> <span class="o">=</span> <span class="s1">&#39;\$([a-zA-Z0-9_]+)&#39;</span>
+    <span class="n">shell_param_brace_regex</span> <span class="o">=</span> <span class="s1">&#39;\${([^}^$]+)}&#39;</span>
+    <span class="c1"># Function to perform bash-like parameter expansion </span>
+    <span class="c1"># Based on: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html</span>
+<div class="viewcode-block" id="parameter_parser.parameter_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.parameter_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">parameter_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+        <span class="c1"># Loop untill all parameter expansions have been processed</span>
+        <span class="n">expansion_limit</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">expansion_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">param_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_param_regex</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="n">param_brace_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_param_brace_regex</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="c1"># If nothing left, break</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">param_match</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">param_brace_match</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">expansion_counter</span> <span class="o">&gt;</span> <span class="n">expansion_limit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_error</span><span class="p">(</span><span class="s2">&quot;Parameter expansion limit reached&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># First try parameter expansions in curly braces</span>
+                <span class="k">if</span> <span class="n">param_brace_match</span><span class="p">:</span>
+                    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">param_brace_match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">param_brace_match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+                    <span class="c1"># Get the full paramter to expand</span>
+                    <span class="n">param</span> <span class="o">=</span> <span class="n">param_brace_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing brace parameter expansion for param </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;parameter_expansion&quot;</span><span class="p">)</span>
+                    
+                    <span class="n">shvar_re</span> <span class="o">=</span> <span class="s1">&#39;[a-zA-Z0-9\[\]@\*]+?&#39;</span>
+                    <span class="n">substitution_re</span> <span class="o">=</span> <span class="n">shvar_re</span> <span class="o">+</span> <span class="s1">&#39;:[-=\?\+]&#39;</span> <span class="o">+</span> <span class="n">shvar_re</span>
+                    <span class="n">substring_re</span> <span class="o">=</span> <span class="n">shvar_re</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">shvar_re</span>
+                    <span class="n">substring_re2</span> <span class="o">=</span> <span class="n">substring_re</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">shvar_re</span>
+                    <span class="c1"># Check for &#39;:&#39; operator for substitution operators</span>
+                    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">substitution_re</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_substitution_operators</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+                    <span class="c1"># Check for &#39;:&#39; operator for substring expansion</span>
+                    <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">substring_re</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">substring_re2</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substring_expansion</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+                    <span class="c1"># Check for &#39;!&#39; operator</span>
+                    <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;!&#39;</span><span class="p">):</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">existing_var_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+                    <span class="c1"># Check for &#39;#&#39; operator at start of param</span>
+                    <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">):</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Default case: ${parameter} or ${paramer[index]}</span>
+                        <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_var_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">var</span><span class="p">:</span>
+                            <span class="n">out</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                        
+                <span class="c1"># Second try simple paramter expansion</span>
+                <span class="k">if</span> <span class="n">param_match</span><span class="p">:</span>
+                    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">param_match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">param_match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+                    <span class="n">param</span> <span class="o">=</span> <span class="n">param_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing simple parameter expansion for param </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;parameter_expansion&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="n">out</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">out</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param</span><span class="p">],</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                
+                <span class="c1"># Perform substitution</span>
+                <span class="c1"># TODO: this will overrite any environemnt variables</span>
+                <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">out</span> <span class="o">+</span> <span class="n">cmd</span><span class="p">[</span><span class="n">end</span><span class="p">:]</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s1">&#39;Invalid prarameter expansion: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+               <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">cmd</span></div>
+
+
+    <span class="c1"># Helper function for dealing with list variables</span>
+<div class="viewcode-block" id="parameter_parser.list_var_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.list_var_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">list_var_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing list variable expansion &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;list_var_expansion&quot;</span><span class="p">)</span>
+        <span class="n">array_indexing_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;(.*)\[(.*)\]&#39;</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+        <span class="c1"># Check if there is array indexing</span>
+        <span class="k">if</span> <span class="n">array_indexing_match</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;param </span><span class="si">%s</span><span class="s2"> contains list indexing&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;list_var_expansion&quot;</span><span class="p">)</span>
+            <span class="c1"># Get the name of the parameter and the indexes used</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">array_indexing_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">array_indexing_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Check to see if this variable is defined</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="c1"># If this is a list, apply list indexing</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                    <span class="c1"># Check for &#39;@&#39; or &#39;*&#39; index -&gt; use entire list</span>
+                    <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="s1">&#39;@&#39;</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">val</span>
+                    <span class="c1"># Check for range indexing</span>
+                    <span class="k">elif</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
+                        <span class="c1"># Split based on &#39;:&#39; and return the list splice</span>
+                        <span class="n">index_parts</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                        <span class="n">index_parts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index_parts</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Parsing list indexing: </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">index_parts</span><span class="p">),</span> <span class="s2">&quot;list_var_expansion&quot;</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="n">val</span><span class="p">[</span><span class="n">index_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">index_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+                        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">index_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Parsing list indexing: </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">index_parts</span><span class="p">),</span> <span class="s2">&quot;list_var_expansion&quot;</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="n">val</span><span class="p">[</span><span class="n">index_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">index_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">index_parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Invalid array indexing: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
+                    <span class="c1"># Default: use index as integer directly</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">val</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
+                <span class="c1"># If this is a dict, return value of this &#39;key&#39;</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Parsing dict indexing: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">,</span> <span class="s2">&quot;list_var_expansion&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">val</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+                <span class="c1"># Default: return value directly</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;param </span><span class="si">%s</span><span class="s2"> does not contain list indexing&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;list_var_expansion&quot;</span><span class="p">)</span>
+            <span class="c1"># No array indexing, return value if it it is defined</span>
+            <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span></div>
+    
+    <span class="c1"># Length expansion</span>
+<div class="viewcode-block" id="parameter_parser.length_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.length_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">length_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing length expansion &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;length_expansion&quot;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> 
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_var_expansion</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+    <span class="c1"># Expands prefix and array indices</span>
+    <span class="c1"># ${!prefix*} / ${!prefix@}</span>
+    <span class="c1"># ${!name[@]} / ${!name[*]}</span>
+<div class="viewcode-block" id="parameter_parser.existing_var_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.existing_var_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">existing_var_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing existing variable expansion &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;existing_var_expansion&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">param</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;@&#39;</span><span class="p">):</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">matches</span><span class="p">,</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;[@]&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">param</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;[*]&#39;</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_var_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">))],</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;0&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Invalid prefix / list index expansion: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="parameter_parser.expand_substitution_operators"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.expand_substitution_operators">[docs]</a>    <span class="k">def</span> <span class="nf">expand_substitution_operators</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_parts</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing substitution expansion &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">param_parts</span><span class="p">,</span> <span class="s2">&quot;expand_substitution_operators&quot;</span><span class="p">)</span>
+        <span class="c1"># Operation is determined by the first character of the second element</span>
+        <span class="c1"># case: ${parameter:-word}</span>
+        <span class="k">if</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+            <span class="c1"># If parameter is unset or null, the expansion of word is substituted. Otherwise, the value of parameter is substituted. </span>
+            <span class="k">if</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="c1"># case: ${parameter:=word}</span>
+        <span class="k">elif</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;=&#39;</span><span class="p">:</span>
+            <span class="c1"># If parameter is unset or null, the expansion of word is assigned to parameter. The value of parameter is then substituted. </span>
+            <span class="k">if</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">out</span>
+                <span class="k">return</span> <span class="n">out</span>
+        <span class="c1"># case: ${parameter:?word}</span>
+        <span class="k">elif</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span>
+            <span class="c1"># If parameter is null or unset, the expansion of word (or a message to that effect if word is not present) is written to the standard error and the shell, if it is not interactive, exits. Otherwise, the value of parameter is substituted. </span>
+            <span class="c1"># TODO: this will only write to shell stderr</span>
+            <span class="k">if</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="s2">&quot;pybash: </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="s2">&quot;pybash: </span><span class="si">%s</span><span class="s2">: parameter null or not set&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># case: ${parameter:+word}</span>
+        <span class="k">elif</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
+            <span class="c1"># If parameter is null or unset, nothing is substituted, otherwise the expansion of word is substituted. </span>
+            <span class="k">if</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># otherwise: This is a Substring Expansion</span>
+        <span class="c1">#       ${parameter:offset} / ${parameter:offset:length}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># - expands to up to &quot;length&quot; characters of the value of &quot;parameter&quot; starting at the caracter specified by &quot;offset&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Unknown subsitition operation </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">param_parts</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="parameter_parser.substring_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.substring_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">substring_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_parts</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing substring expansion &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">param_parts</span><span class="p">,</span> <span class="s2">&quot;substring_expansion&quot;</span><span class="p">)</span>
+        <span class="c1"># get length, offset and end</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># ${parameter:offset:length}</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">length</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># ${parameter:offset}</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">param_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">param_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Unknown substring expansion </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">param_parts</span><span class="p">))</span>
+        <span class="c1"># Get output  </span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_var_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span><span class="p">:</span>
+            <span class="c1"># For lists, use array indexing</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">end</span><span class="p">],</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># For other types, convert to string and index using characters</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">offset</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">out</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+    <span class="n">assignment_regex</span> <span class="o">=</span> <span class="s2">&quot;^([A-Za-z0-9_]+)[ ]*=(.*)&quot;</span>
+    <span class="c1"># Function to parse assignemnt in a command, returns output variable and cmd to be evaluated</span>
+<div class="viewcode-block" id="parameter_parser.get_assignment"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.get_assignment">[docs]</a>    <span class="k">def</span> <span class="nf">get_assignment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+        <span class="n">assignment_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assignment_regex</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">assignment_match</span><span class="p">:</span>
+            <span class="n">output_var</span> <span class="o">=</span> <span class="n">assignment_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">assignment_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output_var</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">output_var</span></div>
+    
+    <span class="n">redirect_definitions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;append_specify&#39;</span><span class="p">,</span> 
+             <span class="s1">&#39;regex&#39;</span><span class="p">:</span> <span class="s1">&#39;(.*?)([0-9]+)&gt;&gt;[ ]*([^ ]+)(.*)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;cmd_out&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+             <span class="s1">&#39;default_descriptor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="s1">&#39;descriptor_index&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;value_index&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;append_default&#39;</span><span class="p">,</span> 
+             <span class="s1">&#39;regex&#39;</span><span class="p">:</span> <span class="s1">&#39;(.*?[^0-9])&gt;&gt;[ ]*([^&gt;^ ]+)(.*)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;cmd_out&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+             <span class="s1">&#39;default_descriptor&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="s1">&#39;descriptor_index&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;value_index&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;write_specify&#39;</span><span class="p">,</span> 
+             <span class="s1">&#39;regex&#39;</span><span class="p">:</span> <span class="s1">&#39;(.*?)([0-9]+)&gt;[ ]*([^ ^&gt;]+)(.*)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;cmd_out&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+             <span class="s1">&#39;default_descriptor&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="s1">&#39;descriptor_index&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;value_index&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;write_default&#39;</span><span class="p">,</span> 
+             <span class="s1">&#39;regex&#39;</span><span class="p">:</span> <span class="s1">&#39;(.*?[^0-9])&gt;[ ]*([^ ^&gt;]+)(.*)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;cmd_out&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+             <span class="s1">&#39;default_descriptor&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="s1">&#39;descriptor_index&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;value_index&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

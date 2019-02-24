@@ -1,0 +1,283 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.util.pipe_util &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pybash.util.pipe_util</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">readline</span>
+
+
+<div class="viewcode-block" id="display_std_pipe"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.display_std_pipe">[docs]</a><span class="k">def</span> <span class="nf">display_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function display a pipe with different variable types</span>
+<span class="sd">    Args:</span>
+<span class="sd">        std_pipe (list): Pybash standard pipe list</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        list: Short display representation of each element of std_pipe.  Files, ints or None elements</span>
+<span class="sd">            are kept as-is, for others the variable type is returned. This allows the std_pipe to be</span>
+<span class="sd">            printed in debug messages in a short form (especially if some elements of std_pipe are a str)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">std_pipe</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="expand_std_pipe"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.expand_std_pipe">[docs]</a><span class="k">def</span> <span class="nf">expand_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">stdin</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="n">use_pipe</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to pick either the std_pipe + stdin/stdout/stderr variables, create pipes and </span>
+<span class="sd">    process redirects.</span>
+<span class="sd">    If std_pipe is defined, then it takes presidence over stdin/stdout/stderr. This allows</span>
+<span class="sd">    functions to accept either a tuple or individual arguments depending on the use case.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        std_pipe (tuple): Containing (stdin,stdout,stderr) as one tuple.</span>
+<span class="sd">        stdin: File-like object, python variable, subprocess.PIPE, positive integer, or None</span>
+<span class="sd">        stdout: File-like object, python variable, subprocess.PIPE, positive integer, or None</span>
+<span class="sd">        stderr: File-like object, python variable, subprocess.PIPE, positive integer, or None</span>
+<span class="sd">            use_pipe (bool): </span>
+<span class="sd">                1. If True: an os.pipe() is created and opened, (read,write) file-like objects</span>
+<span class="sd">                   are returned as a tuple</span>
+<span class="sd">                2. If False: a collections.deque object is created, which is used instead of pipes </span>
+<span class="sd">                   for python comands</span>
+
+<span class="sd">    Special cases for stdin, stdout, stderr:</span>
+<span class="sd">    1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value </span>
+<span class="sd">       of use_pipe.</span>
+<span class="sd">    2. Positive int: this denotes a redirect. </span>
+<span class="sd">       If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is &gt;= 0, then, std_pipe[i] is redirected</span>
+<span class="sd">       to the pipe or deque located at std_pipe[std_pipe[i]].</span>
+<span class="sd">       For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: Returns (stdin,stdout,stderr) which are all either file-like objects (open file, pipes), </span>
+<span class="sd">            python variables (stdin only), or collections.deque objects.  </span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Validate / fill std_pipe if not provided</span>
+    <span class="k">if</span> <span class="n">std_pipe</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;std_pipe must be a 3-element list&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">std_pipe</span> <span class="o">=</span> <span class="p">[</span><span class="n">stdin</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">]</span>
+
+    <span class="c1"># Create pipes / deques for each if they are equal to subprocess.PIPE</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="c1"># Process subprocess.PIPE</span>
+        <span class="c1">#    - shell: create os.pipe() + open file-like object for reading</span>
+        <span class="c1">#    - python: create a FIFO queue</span>
+        <span class="k">if</span> <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_pipe</span><span class="p">:</span>
+                <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">open_pipe</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+
+    <span class="c1"># Process redirects (denoted by positive integers)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Invalid redirect std_pipe index </span><span class="si">%i</span><span class="s2"> cannot be less than 0&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">std_pipe</span><span class="p">[</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+    
+    <span class="k">return</span> <span class="n">std_pipe</span></div>
+
+
+<div class="viewcode-block" id="open_pipe"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.open_pipe">[docs]</a><span class="k">def</span> <span class="nf">open_pipe</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that creates an os.pipe and opens the read / write file handels. This mimicks</span>
+<span class="sd">    what subprocess.Popen() does under-the-hood, but in order to support redirects, it is </span>
+<span class="sd">    usefull to have the pipe opened before calling subprocess.Popen().</span>
+
+<span class="sd">    Ref: https://github.com/python/cpython/blob/master/Lib/subprocess.py</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: Contains the (read, write) file-like objects created by opening the pipe. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create pipe manually so that redirects can be performed before passing to run_shell_cmd()</span>
+    <span class="c1"># Create new os.pipe()</span>
+    <span class="n">r</span><span class="p">,</span><span class="n">w</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">pipe</span><span class="p">()</span>
+    <span class="c1"># Open each file handel and return</span>
+    <span class="c1">#  - use os.fdopen() for the read file object in order to get the same type as </span>
+    <span class="c1">#    subprocess.Popen().stdout</span>
+    <span class="n">file_object_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">file_object_tuple</span></div>
+
+
+<div class="viewcode-block" id="fd_assign"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.fd_assign">[docs]</a><span class="k">def</span> <span class="nf">fd_assign</span><span class="p">(</span><span class="n">file_d_index</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">std_pipe</span><span class="p">):</span>        
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to redirect file descriptor in the std_pipe element specified by file_d_index</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file_d_index (int): Index of std_pipe that will be assigned</span>
+<span class="sd">            0 = stdin, 1 = stdout, 2 = stderr</span>
+<span class="sd">        mode (str): mode to open the file, either &#39;r&#39;, &#39;w&#39; or &#39;a&#39;</span>
+<span class="sd">        val (str): location that the std_pipe element should be redirected to.</span>
+<span class="sd">            This can be a file path (e.g. &#39;foo.txt&#39;, or a reference to another file </span>
+<span class="sd">            descriptor (e.g. &#39;&amp;1&#39;). If the location is a file, the string is replaced</span>
+<span class="sd">            with an open file-like object (with the mode specified by mode)</span>
+<span class="sd">        std_pipe (tuple): Contains the current location of (stdin, stdout, stderr)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Check to see if val refers to another file descriptor</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="s1">&#39;&amp;&#39;</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">copy_index</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;&amp;&quot;</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">copy_index</span><span class="p">)</span>
+     
+    <span class="c1"># If this is a string and is a valid file path, open the file</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    
+    <span class="c1"># If val is a file-like object, integer, subprocess.PIPE or None, the redirect will be</span>
+    <span class="c1"># handeled by run_shell_cmd() / run_python_cmd()</span>
+
+    <span class="c1"># Assign the new value to std_pipe</span>
+    <span class="n">std_pipe</span><span class="p">[</span><span class="n">file_d_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="read_close_fd"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.read_close_fd">[docs]</a><span class="k">def</span> <span class="nf">read_close_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility function used to read an open file-like object and then close it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">fd</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">fd</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+<div class="viewcode-block" id="to_bool"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.to_bool">[docs]</a><span class="k">def</span> <span class="nf">to_bool</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility functions for converting string to bool</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        s (str): either &#39;True&#39;, &#39;False&#39; (case insensitive)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;false&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;String </span><span class="si">%s</span><span class="s2"> cannot be converted to a bool&quot;</span> <span class="o">%</span> <span class="n">s</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="expand_deque_input"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.expand_deque_input">[docs]</a><span class="k">def</span> <span class="nf">expand_deque_input</span><span class="p">(</span><span class="n">dq</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to take a deque (which acts as a pipe for python commands) and </span>
+<span class="sd">    expand it to an input variable that is compatible with run_shell_cmd() / run_python_cmd().</span>
+<span class="sd">    This attempts to replicate the behavour of shell commands such as &#39;foo &gt; bar 2&gt;&amp;1&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        dq (collections.deque): input deque to be converted</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Python variable compatible with run_shell_cmd() / run_python_cmd()</span>
+<span class="sd">            - If the deque was empty: None</span>
+<span class="sd">            - If the deque has len == 1: dq[0]</span>
+<span class="sd">            - If the deque has len &gt; 1, then check the type of elements in the deque. </span>
+<span class="sd">              For str, dict and list, pop each deque element and combine into a single variable.</span>
+<span class="sd">              For other types (or inconsistent types) just convert the deque into a list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If its empty, input is just None</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="c1"># If there is just one element, use it</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dq</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Get the first element and enfoce same type for all input variables</span>
+        <span class="n">new_input</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">input_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">new_input</span><span class="p">)</span>
+        <span class="c1"># If these are not a string, dict or list, convert deque to list</span>
+        <span class="k">if</span> <span class="n">input_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+            <span class="n">new_input</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_input</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span>
+        <span class="c1"># If they are not all the same type, convert deque to list</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dq</span> <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">input_type</span><span class="p">)])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">new_input</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_input</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span>
+        <span class="c1"># If they are consisten types, combine</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">dq</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">input_type</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+                    <span class="n">new_input</span> <span class="o">+=</span> <span class="n">dq</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_input</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dq</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+        <span class="c1"># Replace input var</span>
+        <span class="k">return</span> <span class="n">new_input</span></div>
+                
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

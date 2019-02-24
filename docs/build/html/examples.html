@@ -1,0 +1,156 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Examples &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Under The Hood" href="under_the_hood.html" />
+    <link rel="prev" title="pybash.util package" href="pybash.util.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="under_the_hood.html" title="Under The Hood"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pybash.util.html" title="pybash.util package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>Some examples of commands that can be executed in the pybash interpreter:</p>
+<div class="section" id="pure-shell">
+<h2>Pure Shell<a class="headerlink" href="#pure-shell" title="Permalink to this headline">¶</a></h2>
+<p>You can use the pybash shell just like any regular old linux shell (in fact, you can pick your own shell!)</p>
+<div class="highlight-bash notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nb">cd</span> ~/test
+find . -name <span class="s2">&quot;\*.xml&quot;</span> <span class="p">|</span> xargs -I % cp % /path/to/dir/%.backup
+tail -n <span class="m">2000</span> /var/log/messages <span class="p">|</span> grep -i ERROR &gt; errors.log
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="pure-python">
+<h2>Pure Python<a class="headerlink" href="#pure-python" title="Permalink to this headline">¶</a></h2>
+<p>You can use the pybash shell just like the standard python shell</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">foo</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">}]</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="p">[</span><span class="n">bar</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">bar</span> <span class="ow">in</span> <span class="n">foo</span> <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">bar</span> <span class="ow">and</span> <span class="n">bar</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">]</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="n">test</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;[A-Z]* ([0-9]*) [A-Z]*&#39;</span><span class="p">,</span> <span class="s1">&#39;ABCD 123456 EFJH&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="python-shell">
+<h2>Python + Shell<a class="headerlink" href="#python-shell" title="Permalink to this headline">¶</a></h2>
+<p>You can pipe back and forth between shell and python - it just works!</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span></span>find . - name &quot;\*.yaml&quot; | [s for s in @ if &#39;test_str&#39; in s] | xargs cat &gt; out.yaml
+dict_list = find . -name &quot;\*.yaml&quot; | [from_file(f) for f in @] | [d for d in @ if &#39;test_key&#39; in d]
+</pre></div>
+</td></tr></table></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Examples</a><ul>
+<li><a class="reference internal" href="#pure-shell">Pure Shell</a></li>
+<li><a class="reference internal" href="#pure-python">Pure Python</a></li>
+<li><a class="reference internal" href="#python-shell">Python + Shell</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pybash.util.html"
+                        title="previous chapter">pybash.util package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="under_the_hood.html"
+                        title="next chapter">Under The Hood</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/examples.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="under_the_hood.html" title="Under The Hood"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pybash.util.html" title="pybash.util package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

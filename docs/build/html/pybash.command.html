@@ -1,0 +1,648 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.command package &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pybash.parsing package" href="pybash.parsing.html" />
+    <link rel="prev" title="pybash package" href="pybash.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pybash.parsing.html" title="pybash.parsing package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pybash.html" title="pybash package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="pybash.html" accesskey="U">pybash package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pybash-command-package">
+<h1>pybash.command package<a class="headerlink" href="#pybash-command-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pybash.command.pybash_cmd">
+<span id="pybash-command-pybash-cmd-module"></span><h2>pybash.command.pybash_cmd module<a class="headerlink" href="#module-pybash.command.pybash_cmd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pybash.command.pybash_cmd.pybash_cmd">
+<em class="property">class </em><code class="descclassname">pybash.command.pybash_cmd.</code><code class="descname">pybash_cmd</code><span class="sig-paren">(</span><em>completekey='tab'</em>, <em>stdin=None</em>, <em>stdout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">cmd.Cmd</span></code></a>, <a class="reference internal" href="pybash.util.html#pybash.util.std_io.pybash_io" title="pybash.util.std_io.pybash_io"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.util.std_io.pybash_io</span></code></a></p>
+<dl class="docutils">
+<dt>The pybash_cmd class forms the basis of the terminal interface</dt>
+<dd><ul class="first last simple">
+<li>based on the cmd.Cmd class</li>
+<li>custom functions: cd, exit, sudo, set, show</li>
+<li>extends pybash_io for stdout / stderr printing functions</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.banner" title="pybash.command.pybash_cmd.pybash_cmd.banner"><strong>banner</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – the banner text printed when starting interactive pybash shell</li>
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.prompt_separator" title="pybash.command.pybash_cmd.pybash_cmd.prompt_separator"><strong>prompt_separator</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Text printed in the command-line prompt after the file path</li>
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.user_home" title="pybash.command.pybash_cmd.pybash_cmd.user_home"><strong>user_home</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The home directory of the user, default to ‘~’</li>
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.history_file" title="pybash.command.pybash_cmd.pybash_cmd.history_file"><strong>history_file</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path of the pybash history file</li>
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.cmd_flags" title="pybash.command.pybash_cmd.pybash_cmd.cmd_flags"><strong>cmd_flags</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>Dictionary that stores pybash configuration values such as:
+1. debug: If True, then debug statements are printed
+2. shell: UNIX shell used to execute shell commands, defaults to /bin/bash
+3. max_autocomplete: limits the number of items displayed when autocompleting paths</p>
+<blockquote>
+<div>and names before prompting user if they want to display all possibilities</div></blockquote>
+</li>
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.cmd_flag_types" title="pybash.command.pybash_cmd.pybash_cmd.cmd_flag_types"><strong>cmd_flag_types</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Used to enforce valid variable types for the values stored in
+cmd_flags (for example, debug must be a bool variable). The special ‘file_exists’ str
+is used to indicate str variables which represent an existing file.</li>
+<li><a class="reference internal" href="#pybash.command.pybash_cmd.pybash_cmd.aliases" title="pybash.command.pybash_cmd.pybash_cmd.aliases"><strong>aliases</strong></a> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Used to store shell-like aliases for common commands. Each value in aliases
+is itself a dict which controls the alias behaviour for different pipeline stages:
+Format: {‘alias_cmd’: {-1: &lt;val for last pipeline stage&gt;, 0: &lt;val for other stages&gt;}}
+Example: {‘ll’:    {0: ‘ls -lrt’, -1: ‘ls -lrt –color=auto’}}
+If the ‘0’ or ‘-1’ value is ommited, the alias is not applied for those stages.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.aliases">
+<code class="descname">aliases</code><em class="property"> = {'egrep': {-1: 'egrep --color=auto'}, 'fgrep': {-1: 'fgrep --color=auto'}, 'grep': {-1: 'grep --color=auto'}, 'l': {-1: 'ls -CF --color=auto', 0: 'ls -CF'}, 'll': {-1: 'ls -lrt --color=auto', 0: 'ls -lrt'}, 'ls': {-1: 'ls --color=auto'}}</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.aliases" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.autocomplete_path">
+<code class="descname">autocomplete_path</code><span class="sig-paren">(</span><em>text</em>, <em>line</em>, <em>begidx</em>, <em>endidx</em>, <em>require_file=False</em>, <em>require_dir=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.autocomplete_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.autocomplete_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.banner">
+<code class="descname">banner</code><em class="property"> = 'Welcome to pybash! A pythonic way to use your favourite shell'</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.banner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.cmd_flag_types">
+<code class="descname">cmd_flag_types</code><em class="property"> = {'debug': &lt;class 'bool'&gt;, 'max_autocomplete': &lt;class 'int'&gt;, 'shell': 'file_exists', 'shell_source': 'file_exists'}</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.cmd_flag_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.cmd_flags">
+<code class="descname">cmd_flags</code><em class="property"> = {'debug': True, 'max_autocomplete': 100, 'shell': '/bin/bash', 'shell_source': '/home/ryan/.bashrc'}</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.cmd_flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.complete_cd">
+<code class="descname">complete_cd</code><span class="sig-paren">(</span><em>text</em>, <em>line</em>, <em>begidx</em>, <em>endidx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.complete_cd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.complete_cd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.completedefault">
+<code class="descname">completedefault</code><span class="sig-paren">(</span><em>text</em>, <em>line</em>, <em>begidx</em>, <em>endidx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.completedefault"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.completedefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method called to complete an input line when no command-specific
+complete_*() method is available.</p>
+<p>By default, it returns an empty list.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.completenames">
+<code class="descname">completenames</code><span class="sig-paren">(</span><em>text</em>, <em>*ignored</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.completenames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.completenames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_EOF">
+<code class="descname">do_EOF</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_EOF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_EOF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exit on receiving EOF</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_cd">
+<code class="descname">do_cd</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_cd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_cd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the cd command - working directory is tracked in python</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_exit">
+<code class="descname">do_exit</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_exit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_exit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow ‘exit’ or ‘exit()’ commands to quit pybash</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_history">
+<code class="descname">do_history</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_history"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_history" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Emulates the bash history command. Usage:</dt>
+<dd><ul class="first last simple">
+<li>-c / –clear: Clears the pybash history</li>
+<li>-d / –delete (int) delete a specific history line</li>
+<li>-a / –append [file] append all new history lines from this session to history file,
+or to file specified</li>
+<li>-n / –new [file] read lines from history file created after pybash launched,
+or from file specified</li>
+</ul>
+</dd>
+</dl>
+<p>The line will be parsed using an argparse.ArgumentParser. If no history arguments are
+given, then the history is displayed using pybash_helper.show_history().</p>
+<p>Using pybash_helper.show_history() allows for the history text to be piped to other
+commands, e.g. history | tail -20</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> (<em>str</em>) – line containing history command with optional arguments (see above)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_set">
+<code class="descname">do_set</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to update self.cmd_flags with user input.
+:Parameters: <strong>line</strong> (<em>str</em>) – ‘set’ command arguments in the form: ‘key = value’</p>
+<p>Get the key and value from the input line and validate against the required variable type
+(if available) from cmd_flag_types.  If this check passes, add/set the key/value in
+cmd_flags.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_show">
+<code class="descname">do_show</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to display self.cmd_flags
+:Parameters: <strong>line</strong> (<em>str</em>) – ‘show’ command arguments in the form: ‘key = value’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.do_sudo">
+<code class="descname">do_sudo</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.do_sudo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.do_sudo" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Override shell sudo command</dt>
+<dd><ul class="first last simple">
+<li>if ‘sudo -i’ is used, launch pybash as root</li>
+<li>else, run shell sudo command</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.emptyline">
+<code class="descname">emptyline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.emptyline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.emptyline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override cmd.Cmd.emptyline()
+By default, an empty line causes cmd.cmd to repeat the last command</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.history_file">
+<code class="descname">history_file</code><em class="property"> = '/home/ryan/.pybash'</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.history_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.precmd">
+<code class="descname">precmd</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.precmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.precmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the cmd.Cmd function which is executed before executing each line.
+Attempt to expand event and word designators (e.g. ‘!!’, ‘!$’, ‘!echo:4’)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.preloop">
+<code class="descname">preloop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.preloop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.preloop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override of the cmd.Cmd function which is called when the terminal prompt loop is
+first entered. Performs the following:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Initialize the interpreter’s local and global dicts in order to maintain a separate
+“scope” from the pybash program. Import the pybash_helper module so that it is
+available when executing commands.</li>
+<li>Initialize the list of commands and environment variables available in the user’s
+default shell.</li>
+<li>Initialize history from history file</li>
+<li>Update prompt and print banner</li>
+</ol>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.prompt_separator">
+<code class="descname">prompt_separator</code><em class="property"> = '% '</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.prompt_separator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.tab_complete_prompt_flag">
+<code class="descname">tab_complete_prompt_flag</code><em class="property"> = False</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.tab_complete_prompt_flag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.update_prompt">
+<code class="descname">update_prompt</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.update_prompt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.update_prompt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to update the prompt to the current working directory</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.user_home">
+<code class="descname">user_home</code><em class="property"> = '/home/ryan'</em><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.user_home" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_cmd.pybash_cmd.within_limits">
+<code class="descname">within_limits</code><span class="sig-paren">(</span><em>matches</em>, <em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_cmd.html#pybash_cmd.within_limits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_cmd.pybash_cmd.within_limits" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pybash.command.pybash_runner">
+<span id="pybash-command-pybash-runner-module"></span><h2>pybash.command.pybash_runner module<a class="headerlink" href="#module-pybash.command.pybash_runner" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pybash.command.pybash_runner.pybash_runner">
+<em class="property">class </em><code class="descclassname">pybash.command.pybash_runner.</code><code class="descname">pybash_runner</code><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybash.parsing.html#pybash.parsing.parser.parser" title="pybash.parsing.parser.parser"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.parsing.parser.parser</span></code></a>, <a class="reference internal" href="pybash.util.html#pybash.util.std_io.pybash_io" title="pybash.util.std_io.pybash_io"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.util.std_io.pybash_io</span></code></a></p>
+<p>Class responsible for running pybash commands</p>
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.available_shell_cmds">
+<code class="descname">available_shell_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.available_shell_cmds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.available_shell_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get all available shell commands and store them in the
+searchable dict self.shell_cmds</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.get_shell_aliases">
+<code class="descname">get_shell_aliases</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.get_shell_aliases"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.get_shell_aliases" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get all shell aliases
+TODO: this does not work, can’t seem to get ~/.bashrc to source from subshell
+Use config dict instead</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.initialize_environment_variables">
+<code class="descname">initialize_environment_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.initialize_environment_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.initialize_environment_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to load all environment varaibles from default shell
+and store them in the self.locals dict. This allows them to be accessed
+by python commands and shell commands (using ${var} notation)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.run_cmd">
+<code class="descname">run_cmd</code><span class="sig-paren">(</span><em>cmd</em>, <em>std_pipe=None</em>, <em>input_data=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>last_cmd=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.run_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.run_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to execute a single shell or python command and return the output in a pipe.
+.. note:: A “single command” is one that does not contain a pipeline</p>
+<dl class="docutils">
+<dt>This function performs the following:</dt>
+<dd><ol class="first last arabic simple">
+<li><dl class="first docutils">
+<dt>Validate and standardize the input variables</dt>
+<dd><ol class="first last loweralpha">
+<li>Combine input variables into std_pipe list</li>
+<li>Expand any deque inputs using pipe_util.expand_deque_input()</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li>Sub-in shell aliases if possible</li>
+<li><dl class="first docutils">
+<dt>Determine if the command should be executed as a shell command or python command</dt>
+<dd><ol class="first last loweralpha">
+<li>Commands including pybash helper functions are executed in python</li>
+<li>Commands whose first word is a known shell command is executed in a shell subprocess</li>
+<li>Any other commands are executed in python</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+<p>See run_python_cmd() and run_bash_cmd() for more information on input arguments
+and return types.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cmd</strong> (<em>str</em>) – the shell or python  command to execute</li>
+<li><strong>std_pipe</strong> (<em>list</em>) – list used to pass [input_data, stdout, stderr] if all three
+are available / requried</li>
+<li><strong>input_data</strong> – Either the input_var for run_python_cmd() or the stdin for run_shell_cmd()</li>
+<li><strong>stdout</strong> – The destination of the standard output for python / shell commands</li>
+<li><strong>stdout</strong> – The destination of the standard error for python / shell commands</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Containing (stdout, stderr, process)</dt>
+<dd><p class="first last">stdout and stderr are file-like objects (shell) or deque objects (python)
+generated by the command. process is only used for run_shell_cmd() which
+executes as a subprocess.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.run_pipeline">
+<code class="descname">run_pipeline</code><span class="sig-paren">(</span><em>pipeline_cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.run_pipeline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to execute a combined shell-python command pipeline</p>
+<p class="rubric">Examples</p>
+<ul class="simple">
+<li>py_var = 5 + 4</li>
+<li>cat test.txt | grep str | tail -n 5 &gt;&gt; out_file.txt</li>
+<li>grep -nr str | head -n 5 | py_var</li>
+<li>py_var = grep -nr str | head -n 5</li>
+<li>cat test.txt | grep myvar | cut -d ‘=’ -f2 | py_function(&#64;)</li>
+</ul>
+<p>This function breaks the pipeline into individual commands, and handels
+the redirects, piping between commands, and assignment to python variables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pipeline_cmd</strong> (<em>str</em>) – String containing mixed shell and python syntax,
+using ‘|’ to denote pipes.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.run_python_cmd">
+<code class="descname">run_python_cmd</code><span class="sig-paren">(</span><em>cmd</em>, <em>std_pipe=None</em>, <em>input_var=None</em>, <em>stdout=None</em>, <em>stderr=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.run_python_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.run_python_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Function to execute a python command, accepting an input variable and returning:</dt>
+<dd><ol class="first last arabic simple">
+<li>Result of python command</li>
+<li>stdout of python command</li>
+<li>stderr of python command</li>
+</ol>
+</dd>
+</dl>
+<p>The python command is executed using exec(cmd, self.globals, self.local) in order to maintain
+a separate “varable space” from the pybash program.</p>
+<p>Unlike run_shell_cmd(), run_python_cmd() is blocking. A future improvement could be to execute
+the python command in a subprocess, and allow streaming data through std_pipe.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first">
+<li><p class="first"><strong>cmd</strong> (<em>str</em>) – the shell command to execute</p>
+</li>
+<li><p class="first"><strong>std_pipe</strong> (<em>list</em>) – list used to pass [input_var, stdout, stderr] if all three
+are available / requried</p>
+</li>
+<li><p class="first"><strong>input_var</strong> – The input variable to the python command, which acts similarily to stdin for
+a shell command. This may be:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>File-like object (open python file or pipe), which will be read and converted
+to a string</li>
+<li>Python variable that will be passed directly</li>
+<li>None: no input is provided to the python command</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>stdout</strong> – The destination of the result(s) of the python command.
+This may be:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>File-like object (open python file or pipe), result(s) of python command will
+be written here</li>
+<li>subprocess.PIPE: a new collections.deque object will be created and result(s)
+of python command will be written here</li>
+<li>collections.deque object, result(s) of python command will be written here</li>
+<li>None: stdout will be written to sys.stdout (i.e. the terminal)</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>stderr</strong> – The destination of the standard error generated by the python command.
+This may be:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>File-like object (open python file or pipe), stderr of python command will
+be written here</li>
+<li>subprocess.PIPE: a new collections.deque object will be created and stderr
+of python command will be written here</li>
+<li>collections.deque object, stderr of python command will be written here</li>
+<li>None: stdout will be written to sys.stdout (i.e. the terminal)</li>
+</ol>
+</div></blockquote>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>File-like objects for stdout, stderr (stdout, stderr, None)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since run_python_cmd() does not execute in a subprocess, no process is returned by this function.</p>
+</div>
+<p>stdout and stderr are collections.deque objects, which typically have only one element.  Additional elements
+are added by using redirects. For example, you can redirect the command’s stderr to the stdout deque object.</p>
+<dl class="docutils">
+<dt>The stdout deque may contain (one or both):</dt>
+<dd><ol class="first last loweralpha simple">
+<li>the result of evaluating a python statement (e.g. if cmd = ‘2+4’, stdout = 6)</li>
+<li>the stdout resulting from executing the python statement (e.g. if cmd = ‘print(“foo”)’, stdout = ‘foo’)</li>
+</ol>
+</dd>
+</dl>
+<p>For example, if executing a function that contains a print() statement as well as returning a value, the
+stdout deque will contain both the return value and the printed text.</p>
+<p>The stderr deque will contain the errors generated by the python command (e.g. exception text)</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pybash.command.pybash_runner.pybash_runner.run_shell_cmd">
+<code class="descname">run_shell_cmd</code><span class="sig-paren">(</span><em>cmd</em>, <em>std_pipe=None</em>, <em>stdin=None</em>, <em>stdout=None</em>, <em>stderr=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.run_shell_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.run_shell_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to execute a shell command in a subprocess, accepting stdin and returning stdout / stderr.
+The three standard pipe varaibles can be passed individually or together using the std_pipe list.
+run_shell_cmd() is non-blocking, i.e. it will return before the subprocess finishes executing.
+This allows for proper pipeline streaming.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first">
+<li><p class="first"><strong>cmd</strong> (<em>str</em>) – the shell command to execute (may contain bash-like parameters such as ${var}</p>
+</li>
+<li><p class="first"><strong>std_pipe</strong> (<em>list</em>) – list used to pass [std_in, stdout, stderr] if all three
+are available / requried</p>
+</li>
+<li><p class="first"><strong>stdin</strong> – The standard input to pass to the shell command. This may be:
+1. File-like object (open python file or pipe), passed directly to subprocess.popen()
+2. Python variable that can be converted to a string with str(). This will written</p>
+<blockquote>
+<div><p>to using process.stdin.write() after the process is started.</p>
+</div></blockquote>
+<p>3.None: no input is provided to the subprocess.</p>
+</li>
+<li><p class="first"><strong>stdout</strong> – The destination of the standard output that will be returned by the shell
+command. This may be:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>File-like object (open python file or pipe), passed subprocess.popen()</li>
+<li>subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()</li>
+<li>tuple: this represents an already-existing pipe (read,write), output written
+to stdout[1]</li>
+<li>None: stdout will be written to sys.stdout (i.e. the terminal)</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>stderr</strong> – the destination of the standard error that will be returned by the shell command.
+This may be:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>file-like object (open python file or pipe), passed subprocess.popen()</li>
+<li>subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()</li>
+<li>tuple: this represents an already-existing pipe (read,write), output written
+to stderr[1]</li>
+<li>none: stderr will be written to sys.stderr (i.e. the terminal)</li>
+</ol>
+</div></blockquote>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>file-like objects for stdout, stderr and the process opened by subprocess.popen()
+(stdout, stderr, process)</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>if stdout / stderr file-like objects were passed to run_shell_cmd(),
+the same objects are returned</li>
+<li>if subprocess.PIPE was passed to run_shell_cmd(), the read file handel of the
+newly-created os.pipe() is returned.</li>
+<li>if none was passed to run_shell_cmd(), then none is returned.</li>
+</ol>
+</div></blockquote>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pybash.command">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pybash.command" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pybash.command package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pybash.command.pybash_cmd">pybash.command.pybash_cmd module</a></li>
+<li><a class="reference internal" href="#module-pybash.command.pybash_runner">pybash.command.pybash_runner module</a></li>
+<li><a class="reference internal" href="#module-pybash.command">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pybash.html"
+                        title="previous chapter">pybash package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pybash.parsing.html"
+                        title="next chapter">pybash.parsing package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pybash.command.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pybash.parsing.html" title="pybash.parsing package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pybash.html" title="pybash package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="pybash.html" >pybash package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

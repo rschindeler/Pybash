@@ -5,10 +5,10 @@ import readline
 import atexit
 import traceback
 import argparse
-import util.conversion_util
-import util.history_util
+import pybash.util.conversion_util
+import pybash.util.history_util
 
-from util.std_io import pybash_io
+from pybash.util.std_io import pybash_io
 
 class pybash_cmd(Cmd, pybash_io):
     """
@@ -26,7 +26,7 @@ class pybash_cmd(Cmd, pybash_io):
             1. debug: If True, then debug statements are printed
             2. shell: UNIX shell used to execute shell commands, defaults to /bin/bash
             3. max_autocomplete: limits the number of items displayed when autocompleting paths
-                and names before prompting user if they want to display all possibilities
+               and names before prompting user if they want to display all possibilities
         cmd_flag_types (dict): Used to enforce valid variable types for the values stored in
             cmd_flags (for example, debug must be a bool variable). The special 'file_exists' str
             is used to indicate str variables which represent an existing file.
@@ -75,13 +75,14 @@ class pybash_cmd(Cmd, pybash_io):
         """
         Override of the cmd.Cmd function which is called when the terminal prompt loop is 
         first entered. Performs the following:
-        1. Initialize the interpreter's local and global dicts in order to maintain a separate
-            "scope" from the pybash program. Import the pybash_helper module so that it is 
-            available when executing commands.
-        2. Initialize the list of commands and environment variables available in the user's 
-            default shell.
-        3. Initialize history from history file 
-        4. Update prompt and print banner
+            1. Initialize the interpreter's local and global dicts in order to maintain a separate 
+               "scope" from the pybash program. Import the pybash_helper module so that it is 
+               available when executing commands.
+            2. Initialize the list of commands and environment variables available in the user's 
+               default shell.
+            3. Initialize history from history file 
+            4. Update prompt and print banner
+
         """
 
         # 1) Initialize interpreter local + global "scope"
@@ -91,7 +92,7 @@ class pybash_cmd(Cmd, pybash_io):
 
         # 2) Get commands and environment variables from user's default shell
         # Initialize the list of commands and aliases available in the user's shell
-    	self.available_shell_cmds()
+        self.available_shell_cmds()
         # Initialize environment variables
         self.initialize_environment_variables()
         
@@ -237,14 +238,24 @@ class pybash_cmd(Cmd, pybash_io):
 
     def do_history(self, line):
         """
-        Emulates the bash history command:
-            -c / --clear: Clears the pybash history
-            -d / --delete (int) delete a specific history line
-            -a / --append [file] append all new history lines from this session to history file, 
-                or to file specified
-            -n / --new [file] read lines from history file created after pybash launched, 
-                or from file specified 
-            HERE
+        Emulates the bash history command. Usage:
+            * -c / --clear: Clears the pybash history
+            * -d / --delete (int) delete a specific history line
+            * -a / --append [file] append all new history lines from this session to history file, 
+              or to file specified
+            * -n / --new [file] read lines from history file created after pybash launched, 
+              or from file specified 
+
+        The line will be parsed using an argparse.ArgumentParser. If no history arguments are 
+        given, then the history is displayed using pybash_helper.show_history(). 
+
+        Using pybash_helper.show_history() allows for the history text to be piped to other 
+        commands, e.g. history | tail -20
+        
+        
+        Args:
+            line (str): line containing history command with optional arguments (see above)
+
         """
         # Step 1) Build history parser if not already done from a previous history cmd
         if not hasattr(self, 'history_argparser'):

@@ -1,12 +1,12 @@
 # Functions for converting variable types
-import util.pybash_helper
+import pybash.util.pybash_helper
 
 def shell_data(var):
     """
     Function to convert a python variable to a format compatible with shell commands
-    1. If input is None, return None
-    2. If input is a file, return the file
-    3. For other types, return pybash_helper.to_str(var)
+        1. If input is None, return None
+        2. If input is a file, return the file
+        3. For other types, return pybash_helper.to_str(var)
 
     Args:
         var: Variable to be converted

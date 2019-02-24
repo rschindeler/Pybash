@@ -1,5 +1,5 @@
 import os, io
-import pybash_helper
+import pybash.util.pybash_helper
 from collections import deque
 import subprocess
 import readline
@@ -29,19 +29,19 @@ def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
         stdin: File-like object, python variable, subprocess.PIPE, positive integer, or None
         stdout: File-like object, python variable, subprocess.PIPE, positive integer, or None
         stderr: File-like object, python variable, subprocess.PIPE, positive integer, or None
-        use_pipe (bool): 
-            1. If True: an os.pipe() is created and opened, (read,write) file-like objects
-                are returned as a tuple
-            2. If False: a collections.deque object is created, which is used instead of pipes 
-                for python comands
+            use_pipe (bool): 
+                1. If True: an os.pipe() is created and opened, (read,write) file-like objects
+                   are returned as a tuple
+                2. If False: a collections.deque object is created, which is used instead of pipes 
+                   for python comands
 
     Special cases for stdin, stdout, stderr:
     1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value 
-        of use_pipe.
+       of use_pipe.
     2. Positive int: this denotes a redirect. 
-        If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is >= 0, then, std_pipe[i] is redirected
-        to the pipe or deque located at std_pipe[std_pipe[i]].
-        For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.
+       If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is >= 0, then, std_pipe[i] is redirected
+       to the pipe or deque located at std_pipe[std_pipe[i]].
+       For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.
 
     Returns:
         tuple: Returns (stdin,stdout,stderr) which are all either file-like objects (open file, pipes), 
@@ -165,11 +165,12 @@ def expand_deque_input(dq):
         dq (collections.deque): input deque to be converted
 
     Returns:
-        - If the deque was empty: None
-        - If the deque has len == 1: dq[0]
-        - If the deque has len > 1, then check the type of elements in the deque. 
-          For str, dict and list, pop each deque element and combine into a single variable.
-          For other types (or inconsistent types) just convert the deque into a list.
+        Python variable compatible with run_shell_cmd() / run_python_cmd()
+            - If the deque was empty: None
+            - If the deque has len == 1: dq[0]
+            - If the deque has len > 1, then check the type of elements in the deque. 
+              For str, dict and list, pop each deque element and combine into a single variable.
+              For other types (or inconsistent types) just convert the deque into a list.
     """
     # If its empty, input is just None
     if len(dq) < 1:

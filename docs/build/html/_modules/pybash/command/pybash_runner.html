@@ -1,0 +1,702 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.command.pybash_runner &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pybash.command.pybash_runner</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Python 2</span>
+    <span class="kn">import</span> <span class="nn">StringIO</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Python 3</span>
+    <span class="kn">from</span> <span class="nn">io</span> <span class="k">import</span> <span class="n">StringIO</span>
+
+<span class="c1"># Import pybash helper and utility functions</span>
+<span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span> <span class="k">as</span> <span class="nn">pybash_helper</span>
+<span class="kn">import</span> <span class="nn">pybash.util.pipe_util</span> <span class="k">as</span> <span class="nn">pipe_util</span>
+<span class="kn">import</span> <span class="nn">pybash.util.conversion_util</span> <span class="k">as</span> <span class="nn">conversion_util</span>
+
+<span class="c1"># Import pybash sub-classes</span>
+<span class="kn">from</span> <span class="nn">pybash.command.pybash_cmd</span> <span class="k">import</span> <span class="n">pybash_cmd</span>
+<span class="kn">from</span> <span class="nn">pybash.parsing.parser</span> <span class="k">import</span> <span class="n">parser</span> <span class="k">as</span> <span class="n">pybash_parser</span>
+<span class="kn">from</span> <span class="nn">pybash.util.std_io</span> <span class="k">import</span> <span class="n">pybash_io</span>
+
+
+<span class="c1">#class pybash_runner(pybash_cmd, pybash_parser):</span>
+<div class="viewcode-block" id="pybash_runner"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner">[docs]</a><span class="k">class</span> <span class="nc">pybash_runner</span><span class="p">(</span><span class="n">pybash_parser</span><span class="p">,</span> <span class="n">pybash_io</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class responsible for running pybash commands </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="pybash_runner.run_shell_cmd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd">[docs]</a>    <span class="k">def</span> <span class="nf">run_shell_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to execute a shell command in a subprocess, accepting stdin and returning stdout / stderr.</span>
+<span class="sd">        The three standard pipe varaibles can be passed individually or together using the std_pipe list. </span>
+<span class="sd">        run_shell_cmd() is non-blocking, i.e. it will return before the subprocess finishes executing.</span>
+<span class="sd">        This allows for proper pipeline streaming.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd (str): the shell command to execute (may contain bash-like parameters such as ${var}</span>
+<span class="sd">            std_pipe (list): list used to pass [std_in, stdout, stderr] if all three</span>
+<span class="sd">                are available / requried</span>
+<span class="sd">            stdin: The standard input to pass to the shell command. This may be:</span>
+<span class="sd">                    1. File-like object (open python file or pipe), passed directly to subprocess.popen()</span>
+<span class="sd">                    2. Python variable that can be converted to a string with str(). This will written </span>
+<span class="sd">                       to using process.stdin.write() after the process is started.</span>
+<span class="sd">                    3.None: no input is provided to the subprocess.</span>
+<span class="sd">            stdout: The destination of the standard output that will be returned by the shell </span>
+<span class="sd">                command. This may be:</span>
+<span class="sd">                    1. File-like object (open python file or pipe), passed subprocess.popen()</span>
+<span class="sd">                    2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()</span>
+<span class="sd">                    3. tuple: this represents an already-existing pipe (read,write), output written </span>
+<span class="sd">                       to stdout[1]</span>
+<span class="sd">                    4. None: stdout will be written to sys.stdout (i.e. the terminal) </span>
+<span class="sd">            stderr: the destination of the standard error that will be returned by the shell command.</span>
+<span class="sd">                This may be:</span>
+<span class="sd">                    1. file-like object (open python file or pipe), passed subprocess.popen()</span>
+<span class="sd">                    2. subprocess.pipe: a os.pipe() will be created and passed to subprocess.popen()</span>
+<span class="sd">                    3. tuple: this represents an already-existing pipe (read,write), output written </span>
+<span class="sd">                       to stderr[1]</span>
+<span class="sd">                    4. none: stderr will be written to sys.stderr (i.e. the terminal) </span>
+<span class="sd">            </span>
+<span class="sd">    </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: file-like objects for stdout, stderr and the process opened by subprocess.popen()</span>
+<span class="sd">            (stdout, stderr, process)</span>
+<span class="sd">                1. if stdout / stderr file-like objects were passed to run_shell_cmd(), </span>
+<span class="sd">                   the same objects are returned</span>
+<span class="sd">                2. if subprocess.PIPE was passed to run_shell_cmd(), the read file handel of the </span>
+<span class="sd">                   newly-created os.pipe() is returned.</span>
+<span class="sd">                3. if none was passed to run_shell_cmd(), then none is returned.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Expand std_pipe, create pipes, handle redirects</span>
+        <span class="n">stdin</span><span class="p">,</span><span class="n">stdout</span><span class="p">,</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">expand_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">stdin</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="n">use_pipe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">std_pipe</span><span class="p">:</span>
+            <span class="n">pipe_display</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">display_std_pipe</span><span class="p">([</span><span class="n">stdin</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanded std_pipe: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pipe_display</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Combine cmd if list and perform parameter subsitution</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_expansion</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+       
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;SHELL: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;INPUT: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stdin</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)),</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># If stdin is a file descriptor, pass directly. If not, we will write stdin as a string</span>
+        <span class="k">if</span> <span class="n">stdin</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">stdin_var</span> <span class="o">=</span> <span class="n">stdin</span>
+                <span class="n">write_stdin</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stdin_var</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span>
+                <span class="n">write_stdin</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stdin_var</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">write_stdin</span> <span class="o">=</span> <span class="kc">False</span>
+       
+        <span class="c1"># Possible values for stdout, stderr:</span>
+        <span class="c1">#    None: stdout / stderr will be writen to the terminal</span>
+        <span class="c1">#    existing file object: stdout / stderr are redirected to file</span>
+        <span class="c1">#    subprocess.PIPE: an os.pipe() is created</span>
+        <span class="c1">#    tuple: this is a pipe, write the stdout[1]</span>
+        <span class="n">stdout_var</span> <span class="o">=</span> <span class="n">stdout</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">stdout</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span> <span class="k">else</span> <span class="n">stdout</span>
+        <span class="n">stderr_var</span> <span class="o">=</span> <span class="n">stderr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">stderr</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">stderr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span> <span class="k">else</span> <span class="n">stderr</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;shell stdout_var: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">stdout_var</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;shell stderr_var: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">stderr_var</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Open process</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> 
+            <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+            <span class="n">executable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="s1">&#39;shell&#39;</span><span class="p">],</span> 
+            <span class="n">stdout</span><span class="o">=</span><span class="n">stdout_var</span><span class="p">,</span> 
+            <span class="n">stderr</span><span class="o">=</span><span class="n">stderr_var</span><span class="p">,</span> 
+            <span class="n">stdin</span><span class="o">=</span><span class="n">stdin_var</span><span class="p">)</span>
+        
+        <span class="c1"># Write stdin as string if required</span>
+        <span class="k">if</span> <span class="n">write_stdin</span><span class="p">:</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">stdin</span><span class="p">))</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+        <span class="c1"># If stdout/stderr were tuples, return the read file object</span>
+        <span class="c1"># If not, return the process.stdout/stderr</span>
+        <span class="n">stdout_ret</span> <span class="o">=</span> <span class="n">stdout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span> <span class="k">else</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span>
+        <span class="n">stderr_ret</span> <span class="o">=</span> <span class="n">stderr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stderr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span> <span class="k">else</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;shell stdout_ret: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">stdout_ret</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;shell stderr_ret: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">stderr_ret</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Return file descriptors + process</span>
+        <span class="k">return</span> <span class="n">stdout_ret</span><span class="p">,</span> <span class="n">stderr_ret</span><span class="p">,</span> <span class="n">process</span></div>
+        
+<div class="viewcode-block" id="pybash_runner.run_python_cmd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_python_cmd">[docs]</a>    <span class="k">def</span> <span class="nf">run_python_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_var</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to execute a python command, accepting an input variable and returning:</span>
+<span class="sd">            1. Result of python command</span>
+<span class="sd">            2. stdout of python command</span>
+<span class="sd">            3. stderr of python command</span>
+
+<span class="sd">        The python command is executed using exec(cmd, self.globals, self.local) in order to maintain </span>
+<span class="sd">        a separate &quot;varable space&quot; from the pybash program.</span>
+
+<span class="sd">        Unlike run_shell_cmd(), run_python_cmd() is blocking. A future improvement could be to execute</span>
+<span class="sd">        the python command in a subprocess, and allow streaming data through std_pipe.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            cmd (str): the shell command to execute </span>
+<span class="sd">            std_pipe (list): list used to pass [input_var, stdout, stderr] if all three</span>
+<span class="sd">                are available / requried</span>
+<span class="sd">            input_var: The input variable to the python command, which acts similarily to stdin for</span>
+<span class="sd">                a shell command. This may be:</span>
+<span class="sd">                    1. File-like object (open python file or pipe), which will be read and converted </span>
+<span class="sd">                       to a string</span>
+<span class="sd">                    2. Python variable that will be passed directly</span>
+<span class="sd">                    3. None: no input is provided to the python command</span>
+<span class="sd">            stdout: The destination of the result(s) of the python command. </span>
+<span class="sd">                This may be:</span>
+<span class="sd">                    1. File-like object (open python file or pipe), result(s) of python command will </span>
+<span class="sd">                       be written here</span>
+<span class="sd">                    2. subprocess.PIPE: a new collections.deque object will be created and result(s)</span>
+<span class="sd">                       of python command will be written here </span>
+<span class="sd">                    3. collections.deque object, result(s) of python command will be written here</span>
+<span class="sd">                    4. None: stdout will be written to sys.stdout (i.e. the terminal) </span>
+<span class="sd">            stderr: The destination of the standard error generated by the python command.</span>
+<span class="sd">                This may be:</span>
+<span class="sd">                    1. File-like object (open python file or pipe), stderr of python command will </span>
+<span class="sd">                       be written here</span>
+<span class="sd">                    2. subprocess.PIPE: a new collections.deque object will be created and stderr</span>
+<span class="sd">                       of python command will be written here </span>
+<span class="sd">                    3. collections.deque object, stderr of python command will be written here</span>
+<span class="sd">                    4. None: stdout will be written to sys.stdout (i.e. the terminal) </span>
+<span class="sd">            </span>
+<span class="sd">    </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: File-like objects for stdout, stderr (stdout, stderr, None)</span>
+<span class="sd">                </span>
+<span class="sd">            .. note:: Since run_python_cmd() does not execute in a subprocess, no process is returned by this function.</span>
+<span class="sd">            stdout and stderr are collections.deque objects, which typically have only one element.  Additional elements</span>
+<span class="sd">            are added by using redirects. For example, you can redirect the command&#39;s stderr to the stdout deque object.</span>
+
+<span class="sd">            The stdout deque may contain (one or both): </span>
+<span class="sd">                a) the result of evaluating a python statement (e.g. if cmd = &#39;2+4&#39;, stdout = 6)</span>
+<span class="sd">                b) the stdout resulting from executing the python statement (e.g. if cmd = &#39;print(&quot;foo&quot;)&#39;, stdout = &#39;foo&#39;)</span>
+<span class="sd">            </span>
+<span class="sd">            For example, if executing a function that contains a print() statement as well as returning a value, the</span>
+<span class="sd">            stdout deque will contain both the return value and the printed text.</span>
+
+<span class="sd">            The stderr deque will contain the errors generated by the python command (e.g. exception text)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Expand the std_pipe, handel redirects (create deque objects instead of os.pipe()) </span>
+        <span class="n">input_var</span><span class="p">,</span><span class="n">stdout</span><span class="p">,</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">expand_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">input_var</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanded std_pipe: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">input_var</span><span class="p">),</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">],</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+       
+        <span class="c1">####################################################################</span>
+        <span class="c1"># Step 1) Get input data, initialize __inputvar__ and __outputvar__ in self.locals</span>
+        <span class="c1"># If the input_data is a file descriptor, read string</span>
+        <span class="k">if</span> <span class="n">input_var</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">input_var</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading file object </span><span class="si">%s</span><span class="s2"> and storing as input_var&quot;</span> <span class="o">%</span> <span class="n">input_var</span><span class="p">,</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+            <span class="n">input_var</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">input_var</span><span class="p">)</span> 
+        
+        <span class="c1"># self.write_debug(&quot;input_var: %s&quot; % input_var, &quot;run_python_cmd&quot;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="s1">&#39;__inputvar__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_var</span>
+        <span class="c1"># Initialize __outputvar__ to None in self.locals  - may have been set by a previous cmd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="s1">&#39;__outputvar__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1">####################################################################</span>
+        <span class="c1"># Step 2: Compile the command</span>
+        <span class="c1"># a) Check to see if the command references the input variable</span>
+        <span class="k">if</span> <span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">cmd</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">,</span> <span class="s2">&quot;__inputvar__&quot;</span><span class="p">)</span>
+
+        <span class="c1"># b) Check to see if this is command that can be assigned to a variable</span>
+        <span class="c1">#  - there is probably a better way to do this without using a try-catch</span>
+        <span class="c1"># TODO: ugly nested try-catch</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">assignment_cmd</span> <span class="o">=</span> <span class="s2">&quot;__outputvar__ = &quot;</span> <span class="o">+</span> <span class="n">cmd</span>
+            <span class="c1"># self.write_debug(&quot;test: %s&quot; % assignment_cmd, &quot;run_python_cmd&quot;)</span>
+            <span class="n">cmd_c</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">assignment_cmd</span><span class="p">,</span> <span class="s1">&#39;&lt;pybash&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;exec&#39;</span><span class="p">)</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">assignment_cmd</span>
+            <span class="n">capture_output_var</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># c) Attempt to compile original cmd</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cmd_c</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="s1">&#39;&lt;pybash&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;exec&#39;</span><span class="p">)</span>
+                <span class="n">capture_output_var</span>  <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;Could not compile: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+                <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Sucessfuly compiled python: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd</span><span class="p">),</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+
+        <span class="c1">####################################################################</span>
+        <span class="c1"># Step 3: Execute the command</span>
+        <span class="c1"># a) Create StringIO for out/error</span>
+        <span class="c1"># - after doing this, don&#39;t print anything until out/err are restored!</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+        <span class="c1"># Capture out/err</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">err</span>
+        <span class="c1"># b) run command in try-catch</span>
+        <span class="c1">#    - if any errors occur, they will get added to std_pipe[2]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">exec</span><span class="p">(</span><span class="n">cmd_c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># c) restore orig out/err</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">__stdout__</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">__stderr__</span>
+        <span class="c1"># get out/err values and close</span>
+        <span class="n">stdout_val</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="n">stderr_val</span> <span class="o">=</span> <span class="n">err</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">err</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Restored stdout/stderr&quot;</span><span class="p">,</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+
+        <span class="c1">####################################################################</span>
+        <span class="c1"># Step 4: Add output to pipe or print to sys.stdout/sys.stderr</span>
+        
+        <span class="c1"># Define source lists for output + error pipes</span>
+        <span class="c1">#   - __outputvar__ may not be defined if something went wrong</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">stdout_src_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="s1">&#39;__outputvar__&#39;</span><span class="p">],</span> <span class="n">stdout_val</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">UnboundLocalError</span><span class="p">:</span> 
+            <span class="n">stdout_src_list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdout_val</span><span class="p">]</span>
+
+        <span class="n">stderr_src_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">stderr_val</span><span class="p">]</span>
+        
+        <span class="c1"># Define the mappings between the (name, output pipe, output print function, output source list)</span>
+        <span class="n">output_mapping</span> <span class="o">=</span>  <span class="p">[(</span><span class="s2">&quot;stdout&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">,</span> <span class="n">stdout_src_list</span><span class="p">),</span> 
+                           <span class="p">(</span><span class="s2">&quot;stderr&quot;</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">,</span> <span class="n">stderr_src_list</span><span class="p">)]</span>
+        
+        <span class="c1"># Process each output mapping</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">pipe</span><span class="p">,</span> <span class="n">print_fn</span><span class="p">,</span> <span class="n">src_list</span> <span class="ow">in</span> <span class="n">output_mapping</span><span class="p">:</span>
+            <span class="c1"># Process each source in the list</span>
+            <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="n">src_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">src</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># If pipe is a deque, appendleft</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span> <span class="o">==</span> <span class="n">deque</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Adding src to </span><span class="si">%s</span><span class="s2"> queue&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+                    <span class="n">pipe</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+                <span class="c1"># If pipe is a file-like object, write to file</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Writing </span><span class="si">%s</span><span class="s2"> src to file </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pipe</span><span class="p">),</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+                    <span class="n">pipe</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+                <span class="c1"># If pipe is None, print using print function</span>
+                <span class="k">elif</span> <span class="n">pipe</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Printing </span><span class="si">%s</span><span class="s2"> with function </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">print_fn</span><span class="p">),</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+                    <span class="n">print_fn</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+                <span class="c1"># Otherwise, unrecognized pipe type</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Unrecognized pipe type for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">pipe</span><span class="p">))</span>
+        
+        <span class="c1"># Close any open file handels and return output</span>
+        <span class="c1">#    - there is no subprocess for python commands</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="c1"># Replace with None so that run_cmd() knows not to expect anything</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">output</span></div>
+       
+
+<div class="viewcode-block" id="pybash_runner.run_cmd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_cmd">[docs]</a>    <span class="k">def</span> <span class="nf">run_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_cmd</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to execute a single shell or python command and return the output in a pipe.</span>
+<span class="sd">        .. note:: A &quot;single command&quot; is one that does not contain a pipeline</span>
+<span class="sd">        </span>
+<span class="sd">        This function performs the following:</span>
+<span class="sd">            1. Validate and standardize the input variables </span>
+<span class="sd">                a) Combine input variables into std_pipe list</span>
+<span class="sd">                b) Expand any deque inputs using pipe_util.expand_deque_input()</span>
+<span class="sd">            2. Sub-in shell aliases if possible</span>
+<span class="sd">            3. Determine if the command should be executed as a shell command or python command</span>
+<span class="sd">                a) Commands including pybash helper functions are executed in python</span>
+<span class="sd">                b) Commands whose first word is a known shell command is executed in a shell subprocess</span>
+<span class="sd">                c) Any other commands are executed in python</span>
+
+<span class="sd">        See run_python_cmd() and run_bash_cmd() for more information on input arguments</span>
+<span class="sd">        and return types.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            cmd (str): the shell or python  command to execute</span>
+<span class="sd">            std_pipe (list): list used to pass [input_data, stdout, stderr] if all three</span>
+<span class="sd">                are available / requried</span>
+<span class="sd">            input_data: Either the input_var for run_python_cmd() or the stdin for run_shell_cmd()</span>
+<span class="sd">            stdout: The destination of the standard output for python / shell commands</span>
+<span class="sd">            stdout: The destination of the standard error for python / shell commands</span>
+<span class="sd">        </span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Containing (stdout, stderr, process)</span>
+<span class="sd">                stdout and stderr are file-like objects (shell) or deque objects (python) </span>
+<span class="sd">                generated by the command. process is only used for run_shell_cmd() which</span>
+<span class="sd">                executes as a subprocess.</span>
+<span class="sd">        </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">############################################################################</span>
+        <span class="c1"># Step 1) Validate and standardize input variables</span>
+        <span class="c1"># If std_pipe was provided, check length</span>
+        <span class="k">if</span> <span class="n">std_pipe</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;run_cmd() requires a std_pipe that has exactly 3 elements&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="c1"># If not, create using other input variables</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">std_pipe</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_data</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">]</span>
+        
+        <span class="c1"># If input var is a deque, expand</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">deque</span><span class="p">:</span>
+            <span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">expand_deque_input</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Replaced deque with: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        
+        <span class="c1">############################################################################</span>
+        <span class="c1"># Step 2) Prepare the command string</span>
+        <span class="c1"># Split cmd by space, make sure it has at least one element</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">cmd_parts</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">input_data</span>
+
+        <span class="c1"># Sub in aliases if possible</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aliases</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">last_cmd</span> <span class="ow">and</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aliases</span><span class="p">[</span><span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]]:</span>
+                    <span class="n">new_cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aliases</span><span class="p">[</span><span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Using alias: &#39;</span><span class="si">%s</span><span class="s2">&#39; = &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_cmd</span><span class="p">),</span> <span class="s2">&quot;run_cmd&quot;</span><span class="p">)</span>
+                    <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_cmd</span>
+                <span class="k">elif</span> <span class="ow">not</span> <span class="n">last_cmd</span> <span class="ow">and</span> <span class="mi">0</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aliases</span><span class="p">[</span><span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]]:</span>
+                    <span class="n">new_cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aliases</span><span class="p">[</span><span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Using alias: &#39;</span><span class="si">%s</span><span class="s2">&#39; = &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_cmd</span><span class="p">),</span> <span class="s2">&quot;run_cmd&quot;</span><span class="p">)</span>
+        <span class="c1"># re-join and split now that aliases are in place</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">)</span>
+        <span class="n">cmd_parts</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="c1">############################################################################</span>
+        <span class="c1"># Step 3) Check to see if this is a shell or python command and execute</span>
+        <span class="c1"># a) Check to see if this command contains known pybash helper functions</span>
+        <span class="n">helper_functions</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">function_match</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">helper_functions</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">)):</span>
+                <span class="c1"># This command contains python_helper function(s)</span>
+                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">helper_functions</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Check to see if &#39;(@)&#39; should be added</span>
+                    <span class="n">f_call_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fn</span> <span class="o">+</span> <span class="s2">&quot;\([^\)]*\)&quot;</span><span class="p">,</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">f_call_match</span><span class="p">:</span>
+                        <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;pybash_helper.&quot;</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;pybash_helper.&quot;</span> <span class="o">+</span> <span class="n">fn</span> <span class="o">+</span> <span class="s2">&quot;(@)&quot;</span><span class="p">)</span>
+                    
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Helper function iteration: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;run_cmd&quot;</span><span class="p">)</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">)</span>    
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;FULL CALL: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;run_cmd&quot;</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_python_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="n">std_pipe</span><span class="p">)</span>
+        
+        <span class="c1"># b) Check to see if the first element of cmd is a known shell function</span>
+        <span class="c1">#   - exclude python keywords such as import (which may also be valid shell commands)</span>
+        <span class="k">elif</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">python_keyword_match</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="c1"># If input data is provided, format special variable types for shell compatibility</span>
+            <span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">conversion_util</span><span class="o">.</span><span class="n">shell_data</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="n">std_pipe</span><span class="p">)</span> 
+        <span class="c1"># c) Default to python</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_python_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="n">std_pipe</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="pybash_runner.run_pipeline"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">run_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipeline_cmd</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to execute a combined shell-python command pipeline</span>
+<span class="sd">        </span>
+<span class="sd">        Examples:</span>
+<span class="sd">            * py_var = 5 + 4</span>
+<span class="sd">            * cat test.txt | grep str | tail -n 5 &gt;&gt; out_file.txt</span>
+<span class="sd">            * grep -nr str | head -n 5 | py_var</span>
+<span class="sd">            * py_var = grep -nr str | head -n 5</span>
+<span class="sd">            * cat test.txt | grep myvar | cut -d &#39;=&#39; -f2 | py_function(@)</span>
+<span class="sd">        </span>
+<span class="sd">        This function breaks the pipeline into individual commands, and handels</span>
+<span class="sd">        the redirects, piping between commands, and assignment to python variables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pipeline_cmd (str): String containing mixed shell and python syntax,</span>
+<span class="sd">                using &#39;|&#39; to denote pipes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1">#######################################################################</span>
+        <span class="c1"># Step 1) Setup</span>
+        
+        <span class="c1"># Check for top-level redirects and expansions</span>
+        <span class="c1"># a) Check for assignment operator</span>
+        <span class="n">pipeline_cmd</span><span class="p">,</span> <span class="n">output_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_assignment</span><span class="p">(</span><span class="n">pipeline_cmd</span><span class="p">)</span>
+
+        <span class="c1"># b) Get each part of the pipeline</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pipeline_cmd</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="p">]</span>
+
+        <span class="c1"># c) Inintialize the &quot;location&quot; of [stdin, stdout, stderr] for the pipeline</span>
+        <span class="c1">#    - For the first iteration, stdin = None</span>
+        <span class="n">std_pipe</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        
+        <span class="c1">#######################################################################</span>
+        <span class="c1"># Step 2) Execute each part of the pipeline, passing output of each stage along</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)):</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Starting cmd: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+
+            <span class="c1"># a) Initialize std_pipe for this iteration</span>
+            <span class="c1"># stdin: set by the previous iteration</span>
+            <span class="c1"># stdout: stage-dependant</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># For the last pipeline command, the stdout value is one of</span>
+                <span class="c1">#    None: this causes it to be displayed in the terminal</span>
+                <span class="c1">#    -2: this causes it to be assigned to the output variable</span>
+                <span class="k">if</span> <span class="n">output_var</span><span class="p">:</span>
+                    <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># For all other iterations, pipe stdout to the next stage </span>
+                <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span> 
+
+            <span class="c1"># stderr: all stages start with stderr = None</span>
+            <span class="n">std_pipe</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="c1"># b) Get the redirects for this command</span>
+            <span class="c1">#   - by default, each pipeline stage reads stdin and writes to stdout + stderr</span>
+            <span class="c1">#   - the &quot;location&quot; of stdin / stdout / stderr are determined by the std_pipe</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirects</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;std_pipe this stage: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">display_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># c) Run command, get [stdout, stderr, subprocess.Popen() object]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">process</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">process</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">last_cmd</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> 
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;failed to execute: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+                <span class="k">break</span>
+            
+            <span class="c1"># d) Assign stdin for the next iteration</span>
+            <span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Done cmd: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;std_pipe for next stage: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">display_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+    
+    
+        <span class="c1">#######################################################################</span>
+        <span class="c1"># Step 3) Perform post-pipeline activities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;done pipeline&quot;</span><span class="p">,</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+        <span class="c1"># a) If there is a remaining process, wait for it to complete </span>
+        <span class="k">if</span> <span class="n">process</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Waiting for process to complete: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">process</span><span class="p">)</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        
+        <span class="c1"># b) Assign to output variable if required</span>
+        <span class="k">if</span> <span class="n">output_var</span><span class="p">:</span>
+            <span class="c1"># Read stdout from std_pipe[1] (either a file-like object or deque)</span>
+            <span class="n">stdout</span> <span class="o">=</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">stdout</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading file </span><span class="si">%s</span><span class="s2"> and assigning to output variable </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="n">output_var</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+                    <span class="n">stdout_result</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_error</span><span class="p">(</span><span class="s2">&quot;Could not process assignemnt, received closed file object&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="n">deque</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading deque and assigning to output variable </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">output_var</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
+                <span class="n">stdout_result</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">expand_deque_input</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
+           
+            <span class="c1"># Assign stdout_result to the special __stdout__ variable in self.locals</span>
+            <span class="c1"># so that it can be assigned </span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">output_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">stdout_result</span> 
+        
+        <span class="c1"># c) Read and close any open file handels / python variables for stdout and stderr  </span>
+        <span class="n">print_fn</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;printing std_pipe[</span><span class="si">%i</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span> 
+                <span class="c1"># If this is a file, check to see if open </span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">file</span> <span class="ow">and</span> <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">readline</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+                        <span class="n">print_fn</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">line</span><span class="p">,</span> <span class="n">print_line</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="c1"># Otherwise, assume python variable and print </span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">print_fn</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="nb">str</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span></div>
+    
+<div class="viewcode-block" id="pybash_runner.available_shell_cmds"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.available_shell_cmds">[docs]</a>    <span class="k">def</span> <span class="nf">available_shell_cmds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to get all available shell commands and store them in the </span>
+<span class="sd">        searchable dict self.shell_cmds </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Execute compgen to get all commands</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_cmd</span><span class="p">(</span><span class="s2">&quot;compgen -A function -ack&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">cmd_list_str</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">cmd_list</span> <span class="o">=</span> <span class="n">cmd_list_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+        <span class="c1"># Store in special hash</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cmd_list</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Loaded </span><span class="si">%i</span><span class="s2"> shell commands&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span><span class="p">),</span> <span class="s2">&quot;available_shell_cmds&quot;</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="pybash_runner.initialize_environment_variables"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.initialize_environment_variables">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_environment_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to load all environment varaibles from default shell</span>
+<span class="sd">        and store them in the self.locals dict. This allows them to be accessed</span>
+<span class="sd">        by python commands and shell commands (using ${var} notation)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Execute printenv to get all environment variables</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_cmd</span><span class="p">(</span><span class="s2">&quot;printenv&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">env_list_str</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">env_list</span> <span class="o">=</span> <span class="n">env_list_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+        <span class="c1"># Store each in self.locals hash</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">env_list</span><span class="p">:</span>
+            <span class="c1"># Skip empty lines</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># Separate into key/value</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Failed to load environment line: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="s2">&quot;=&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="pybash_runner.get_shell_aliases"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.get_shell_aliases">[docs]</a>    <span class="k">def</span> <span class="nf">get_shell_aliases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to get all shell aliases</span>
+<span class="sd">        TODO: this does not work, can&#39;t seem to get ~/.bashrc to source from subshell</span>
+<span class="sd">        Use config dict instead</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Get the name of the shell script sourced by the default shell</span>
+        <span class="n">shell_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd_flags</span><span class="p">[</span><span class="s1">&#39;shell_source&#39;</span><span class="p">]</span>
+        <span class="c1"># Source this script and print all known aliases</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_cmd</span><span class="p">(</span><span class="s2">&quot;source &quot;</span> <span class="o">+</span> <span class="n">shell_source</span> <span class="o">+</span> <span class="s2">&quot;;</span><span class="se">\n</span><span class="s2">alias;&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">alias_list_str</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">alias_list_str</span><span class="p">)</span>
+        <span class="n">alias_list</span> <span class="o">=</span> <span class="n">alias_list_str</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="c1"># Double check formating of each line then add to dict</span>
+        <span class="n">shell_aliases</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">alias_list</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;alias (.*)=&#39;(.*)&#39;&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shell_aliases</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>  <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">shell_aliases</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">(</span><span class="n">alias</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">alias</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">shell_aliases</span></div></div>
+
+
+
+        
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>

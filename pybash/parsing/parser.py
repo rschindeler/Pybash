@@ -1,10 +1,10 @@
 import re
 
-import util.pipe_util
+import pybash.util.pipe_util
 
 # Some parsing functions are handeled by subclasses 
-from designator_parser import designator_parser
-from parameter_parser import parameter_parser
+from pybash.parsing.designator_parser import designator_parser
+from pybash.parsing.parameter_parser import parameter_parser
 
 class parser(designator_parser, parameter_parser):
     """

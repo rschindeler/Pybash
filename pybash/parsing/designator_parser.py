@@ -1,8 +1,8 @@
 import re
 import readline
 
-from util.std_io import pybash_io
-import util.history_util
+from pybash.util.std_io import pybash_io
+import pybash.util.history_util
 
 # Function to get the index of the last sequential character matching a regex,
 # optionally starting at a specific index

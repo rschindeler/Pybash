@@ -1,0 +1,266 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pybash.parsing package &#8212; Pybash  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pybash.util package" href="pybash.util.html" />
+    <link rel="prev" title="pybash.command package" href="pybash.command.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pybash.util.html" title="pybash.util package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pybash.command.html" title="pybash.command package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="pybash.html" accesskey="U">pybash package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pybash-parsing-package">
+<h1>pybash.parsing package<a class="headerlink" href="#pybash-parsing-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pybash.parsing.designator_parser">
+<span id="pybash-parsing-designator-parser-module"></span><h2>pybash.parsing.designator_parser module<a class="headerlink" href="#module-pybash.parsing.designator_parser" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pybash.parsing.designator_parser.designator_parser">
+<em class="property">class </em><code class="descclassname">pybash.parsing.designator_parser.</code><code class="descname">designator_parser</code><a class="reference internal" href="_modules/pybash/parsing/designator_parser.html#designator_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.designator_parser.designator_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybash.util.html#pybash.util.std_io.pybash_io" title="pybash.util.std_io.pybash_io"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.util.std_io.pybash_io</span></code></a></p>
+<dl class="method">
+<dt id="pybash.parsing.designator_parser.designator_parser.expand_designators">
+<code class="descname">expand_designators</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/designator_parser.html#designator_parser.expand_designators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.designator_parser.designator_parser.expand_designators" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.designator_parser.designator_parser.expand_event_designator">
+<code class="descname">expand_event_designator</code><span class="sig-paren">(</span><em>cmd</em>, <em>loc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/designator_parser.html#designator_parser.expand_event_designator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.designator_parser.designator_parser.expand_event_designator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.designator_parser.designator_parser.expand_word_designator">
+<code class="descname">expand_word_designator</code><span class="sig-paren">(</span><em>cmd</em>, <em>next_loc</em>, <em>replace_val</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/designator_parser.html#designator_parser.expand_word_designator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.designator_parser.designator_parser.expand_word_designator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pybash.parsing.designator_parser.last_matching_char">
+<code class="descclassname">pybash.parsing.designator_parser.</code><code class="descname">last_matching_char</code><span class="sig-paren">(</span><em>r</em>, <em>s</em>, <em>i=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/designator_parser.html#last_matching_char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.designator_parser.last_matching_char" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pybash.parsing.parameter_parser">
+<span id="pybash-parsing-parameter-parser-module"></span><h2>pybash.parsing.parameter_parser module<a class="headerlink" href="#module-pybash.parsing.parameter_parser" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pybash.parsing.parameter_parser.parameter_parser">
+<em class="property">class </em><code class="descclassname">pybash.parsing.parameter_parser.</code><code class="descname">parameter_parser</code><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybash.util.html#pybash.util.std_io.pybash_io" title="pybash.util.std_io.pybash_io"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.util.std_io.pybash_io</span></code></a></p>
+<dl class="attribute">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.assignment_regex">
+<code class="descname">assignment_regex</code><em class="property"> = '^([A-Za-z0-9_]+)[ ]*=(.*)'</em><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.assignment_regex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.existing_var_expansion">
+<code class="descname">existing_var_expansion</code><span class="sig-paren">(</span><em>param</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.existing_var_expansion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.existing_var_expansion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.expand_substitution_operators">
+<code class="descname">expand_substitution_operators</code><span class="sig-paren">(</span><em>param_parts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.expand_substitution_operators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.expand_substitution_operators" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.get_assignment">
+<code class="descname">get_assignment</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.get_assignment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.get_assignment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.length_expansion">
+<code class="descname">length_expansion</code><span class="sig-paren">(</span><em>param</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.length_expansion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.length_expansion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.list_var_expansion">
+<code class="descname">list_var_expansion</code><span class="sig-paren">(</span><em>param</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.list_var_expansion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.list_var_expansion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.parameter_expansion">
+<code class="descname">parameter_expansion</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.parameter_expansion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.parameter_expansion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.redirect_definitions">
+<code class="descname">redirect_definitions</code><em class="property"> = [{'name': 'append_specify', 'regex': '(.*?)([0-9]+)&gt;&gt;[ ]*([^ ]+)(.*)', 'cmd_out': [0, 3], 'default_descriptor': None, 'descriptor_index': 1, 'mode': 'a', 'value_index': 2}, {'name': 'append_default', 'regex': '(.*?[^0-9])&gt;&gt;[ ]*([^&gt;^ ]+)(.*)', 'cmd_out': [0, 2], 'default_descriptor': 1, 'descriptor_index': None, 'mode': 'a', 'value_index': 1}, {'name': 'write_specify', 'regex': '(.*?)([0-9]+)&gt;[ ]*([^ ^&gt;]+)(.*)', 'cmd_out': [0, 3], 'default_descriptor': None, 'descriptor_index': 1, 'mode': 'w', 'value_index': 2}, {'name': 'write_default', 'regex': '(.*?[^0-9])&gt;[ ]*([^ ^&gt;]+)(.*)', 'cmd_out': [0, 2], 'default_descriptor': 1, 'descriptor_index': None, 'mode': 'w', 'value_index': 1}]</em><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.redirect_definitions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.shell_param_brace_regex">
+<code class="descname">shell_param_brace_regex</code><em class="property"> = '\\${([^}^$]+)}'</em><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.shell_param_brace_regex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.shell_param_regex">
+<code class="descname">shell_param_regex</code><em class="property"> = '\\$([a-zA-Z0-9_]+)'</em><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.shell_param_regex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pybash.parsing.parameter_parser.parameter_parser.substring_expansion">
+<code class="descname">substring_expansion</code><span class="sig-paren">(</span><em>param_parts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.substring_expansion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.substring_expansion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pybash.parsing.parser">
+<span id="pybash-parsing-parser-module"></span><h2>pybash.parsing.parser module<a class="headerlink" href="#module-pybash.parsing.parser" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pybash.parsing.parser.parser">
+<em class="property">class </em><code class="descclassname">pybash.parsing.parser.</code><code class="descname">parser</code><a class="reference internal" href="_modules/pybash/parsing/parser.html#parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parser.parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pybash.parsing.designator_parser.designator_parser" title="pybash.parsing.designator_parser.designator_parser"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.parsing.designator_parser.designator_parser</span></code></a>, <a class="reference internal" href="#pybash.parsing.parameter_parser.parameter_parser" title="pybash.parsing.parameter_parser.parameter_parser"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.parsing.parameter_parser.parameter_parser</span></code></a></p>
+<dl class="docutils">
+<dt>Class to manage parsing / expansion of commands:</dt>
+<dd><ol class="first last arabic simple">
+<li>event and word designators (e.g. !!, !$) (designator_parser class)</li>
+<li>parameter expansion (e.g. ${var:4} (parameter_parser class)</li>
+<li>file + pipe redirects</li>
+</ol>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pybash.parsing.parser.parser.redirects">
+<code class="descname">redirects</code><span class="sig-paren">(</span><em>cmd</em>, <em>std_pipe</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parser.html#parser.redirects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parser.parser.redirects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to process all redirects in a command string. Redirects are implemented using
+the std_pipe variable, which describes the “location” of the command’s  stdin/stdout/stderr
+This function will look for ‘&gt;’, ‘&gt;&gt;’, ‘&lt;’ in command, parse the redirect, then return the
+command with the redirect remove.</p>
+<p>For example: echo foo &gt;&gt; bar 2&gt;&amp;1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cmd</strong> (<em>str</em>) – Command which may contain 0 or more redirect statements</li>
+<li><strong>std_pipe</strong> (<em>tuple</em>) – pybash std_pipe variable containing “location” of stdin/stdout/stderr</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(str) Command with all redirect text removed</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pybash.parsing">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pybash.parsing" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pybash.parsing package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pybash.parsing.designator_parser">pybash.parsing.designator_parser module</a></li>
+<li><a class="reference internal" href="#module-pybash.parsing.parameter_parser">pybash.parsing.parameter_parser module</a></li>
+<li><a class="reference internal" href="#module-pybash.parsing.parser">pybash.parsing.parser module</a></li>
+<li><a class="reference internal" href="#module-pybash.parsing">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pybash.command.html"
+                        title="previous chapter">pybash.command package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pybash.util.html"
+                        title="next chapter">pybash.util package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pybash.parsing.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pybash.util.html" title="pybash.util package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pybash.command.html" title="pybash.command package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="pybash.html" >pybash package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ryan Schindeler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.4.
+    </div>
+  </body>
+</html>
