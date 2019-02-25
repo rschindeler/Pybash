@@ -77,9 +77,29 @@ tail -n <span class="m">2000</span> /var/log/messages <span class="p">|</span> g
 <div class="section" id="python-shell">
 <h2>Python + Shell<a class="headerlink" href="#python-shell" title="Permalink to this headline">¶</a></h2>
 <p>You can pipe back and forth between shell and python - it just works!</p>
+<p>Each “stage” in the pipeline is either interpreted as shell or python. Pybash inlcudes some
+helper functions to ease the transition.</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2</pre></div></td><td class="code"><div class="highlight"><pre><span></span>find . - name &quot;\*.yaml&quot; | [s for s in to_list(@) if &#39;test&#39; in s] | xargs cat &gt; out.yaml
 dict_list = find . -name &quot;\*.yaml&quot; | [to_dict(from_file(f)) for f in to_list(@)] | [d for d in @ if &#39;test_key&#39; in d]
+</pre></div>
+</td></tr></table></div>
+<p>See <a href="#id1"><span class="problematic" id="id2">:module:`pybash.util.pybash_helper`</span></a> for details on the available helper functions.</p>
+<p>When piping to a python stage, ‘&#64;’ is interpreted as the input variable from
+the previous stage. The following examples shows how this is done:</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7</pre></div></td><td class="code"><div class="highlight"><pre><span></span># Explicit variables
+var_str = find . -name &quot;*.yaml&quot; # This will store results as a string
+var_list = var_str.split(&#39;\n&#39;) # Convert to list by splitting newlines
+# Implicit piping
+var_list = find . -name &quot;*.yaml&quot; | @.split()   # Use &#39;@&#39; as a stand-in for the input variables
+var_list = find . -name &quot;*.yaml&quot; | to_list(@) # Use the pybash_helper function &#39;to_list()&#39;
+var_list = find . -name &quot;*.yaml&quot; | to_list     # Use short-form for the &#39;to_list()&#39; function
 </pre></div>
 </td></tr></table></div>
 </div>

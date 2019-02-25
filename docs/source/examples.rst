@@ -31,8 +31,27 @@ Python + Shell
 -------------------------
 You can pipe back and forth between shell and python - it just works!
 
+Each "stage" in the pipeline is either interpreted as shell or python. Pybash inlcudes some 
+helper functions to ease the transition.
+
 .. code-block:: python
     :linenos:
 
     find . - name "\*.yaml" | [s for s in to_list(@) if 'test' in s] | xargs cat > out.yaml
     dict_list = find . -name "\*.yaml" | [to_dict(from_file(f)) for f in to_list(@)] | [d for d in @ if 'test_key' in d]
+
+See :module:`pybash.util.pybash_helper` for details on the available helper functions.
+
+When piping to a python stage, '@' is interpreted as the input variable from
+the previous stage. The following examples shows how this is done:
+
+.. code-block:: python
+    :linenos:
+
+    # Explicit variables
+    var_str = find . -name "*.yaml" # This will store results as a string
+    var_list = var_str.split('\n') # Convert to list by splitting newlines
+    # Implicit piping
+    var_list = find . -name "*.yaml" | @.split()   # Use '@' as a stand-in for the input variables
+    var_list = find . -name "*.yaml" | to_list(@) # Use the pybash_helper function 'to_list()'
+    var_list = find . -name "*.yaml" | to_list     # Use short-form for the 'to_list()' function
