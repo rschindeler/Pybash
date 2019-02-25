@@ -497,8 +497,6 @@ class pybash_runner(pybash_parser, pybash_io):
             self.write_debug("std_pipe this stage: %s" % pipe_util.display_std_pipe(std_pipe), "run_pipeline")
             
             # c) Run command, get [stdout, stderr, subprocess.Popen() object]
-            process = None
-            std_pipe[1], std_pipe[2], process = self.run_cmd(cmd, std_pipe=std_pipe, last_cmd = (i==len(pipeline)-1)) 
             try:
                 process = None
                 std_pipe[1], std_pipe[2], process = self.run_cmd(cmd, std_pipe=std_pipe, last_cmd = (i==len(pipeline)-1)) 
