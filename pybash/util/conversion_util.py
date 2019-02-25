@@ -34,7 +34,7 @@ def autoconvert(s):
     Returns: bool, int or float if the value could be converted, string if no conversion 
         was found.
     """
-    for fn in (to_bool, int, float):
+    for fn in (pipe_util.to_bool, int, float):
         try:
             return fn(s)
         except ValueError:
