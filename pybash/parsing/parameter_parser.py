@@ -248,13 +248,28 @@ class parameter_parser(pybash_io):
         else:
             return ""
 
-    assignment_regex = "^([A-Za-z0-9_]+)[ ]*=(.*)"
-    # Function to parse assignemnt in a command, returns output variable and cmd to be evaluated
+    
+    # This regex will pick up the first assignment (a = b) in a command
+    # but exclude other commands with '=' such as 'a == b' or 'a <= b'
+    assignment_regex = '^([A-Za-z0-9_]+)[ ]*[^\>\<=]*=[ ]*([^=].*)$'
     def get_assignment(self, cmd):
+        """
+        Function to parse assignemnt in a command, returns output variable and cmd to be evaluated
+        
+        Args:
+            cmd (str): Command that may be in the form 'var = expression' where 'var' is the output 
+                variable and 'expression' is a valid pybash expression
+        Returns:
+            tuple: (expression, var) Separated input command if an assignment was detected.  If no 
+                assignemnt was detected, then expression = cmd and var = :const:`None`
+
+        """
+        self.write_debug("Checking command for assignment: %s" % cmd)
         assignment_match = re.match(self.assignment_regex, cmd)
         if assignment_match:
             output_var = assignment_match.groups()[0]
             cmd = assignment_match.groups()[1]
+            self.write_debug("Detected assignment: %s = %s" % (output_var, cmd))
         else:
             output_var = None
         return cmd, output_var

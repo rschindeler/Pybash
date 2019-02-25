@@ -1,6 +1,6 @@
 import re
 
-import pybash.util.pipe_util
+import pybash.util.pipe_util as pipe_util
 
 # Some parsing functions are handeled by subclasses 
 from pybash.parsing.designator_parser import designator_parser
