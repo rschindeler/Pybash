@@ -21,10 +21,6 @@ Shell-like pipes, file redirects, and pybash helper functions allow you to move 
 forth between shell and python to make your life easy. 
 
 
-http://docutils.sourceforge.net/docs/user/rst/quickref.html
-https://gisellezeno.com/tutorials/sphinx-for-python-documentation.html
-https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
-
 .. toctree::
     :maxdepth: 2
     :titlesonly:
