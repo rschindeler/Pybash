@@ -408,7 +408,7 @@ class pybash_runner(pybash_parser, pybash_io):
                     if not fn in cmd_parts[i]:
                         continue
                     # Check to see if '(@)' should be added
-                    f_call_match = re.match(fn + "\([^\)]*\)", cmd_parts[i])
+                    f_call_match = re.match('.*' + fn + "\([^\)]*\)", cmd_parts[i])
                     if f_call_match:
                         cmd_parts[i] = cmd_parts[i].replace(fn, "pybash_helper." + fn)
                     else:
