@@ -516,12 +516,9 @@ class pybash_runner(pybash_parser, pybash_io):
         #######################################################################
         # Step 3) Perform post-pipeline activities
         self.write_debug("done pipeline", "run_pipeline")
-        # a) If there is a remaining process, wait for it to complete 
-        if process:
-            self.write_debug("Waiting for process to complete: %s" % process)
-            process.wait()
         
-        # b) Assign to output variable if required
+        # a) Assign to output variable if required
+        #   - some processes (e.g. 'find') will not exit if they have a stdout buffer
         if output_var:
             # Read stdout from std_pipe[1] (either a file-like object or deque)
             stdout = std_pipe[1]
@@ -538,6 +535,11 @@ class pybash_runner(pybash_parser, pybash_io):
             # Assign stdout_result to the special __stdout__ variable in self.locals
             # so that it can be assigned 
             self.locals[output_var] = stdout_result 
+        
+        # b) If there is a remaining process, wait for it to complete 
+        if process:
+            self.write_debug("Waiting for process to complete: %s" % process)
+            process.wait()
         
         # c) Read and close any open file handels / python variables for stdout and stderr  
         print_fn = [self.stdout_write, self.stderr_write]
