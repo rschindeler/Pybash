@@ -10,8 +10,9 @@ Welcome to Pybash!
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: pybash
+.. automodule:: app
     :members:
+
 
 
 Pybash is a command-line interpreter written in python. It's goal is to allow the execution 
@@ -19,6 +20,10 @@ of any valid shell or python command - as well as combinations of the two!
 Shell-like pipes, file redirects, and pybash helper functions allow you to move back and 
 forth between shell and python to make your life easy. 
 
+
+http://docutils.sourceforge.net/docs/user/rst/quickref.html
+https://gisellezeno.com/tutorials/sphinx-for-python-documentation.html
+https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
 
 .. toctree::
     :maxdepth: 2

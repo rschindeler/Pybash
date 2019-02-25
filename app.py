@@ -9,9 +9,13 @@ from pybash.command.pybash_cmd import pybash_cmd
 
 """
 Pybash
-**************************
 
-
+TODOs:
+    - Python 3 seems to have a different scope when doing list compresions
+      This is stopping pybash_helper functions from being used in the "first" part:
+       - broken in 3.x: [to_list(f) for f in @] 
+       - works in 3.x: [ f for f in to_list(@)]
+       - also had to put __inputvar__ in self.globals for python 3.x
 """
 
 class pybash(pybash_cmd, pybash_runner):

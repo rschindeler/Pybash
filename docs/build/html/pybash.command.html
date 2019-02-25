@@ -292,7 +292,9 @@ default shell.</li>
 <dt id="pybash.command.pybash_runner.pybash_runner.available_shell_cmds">
 <code class="descname">available_shell_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/command/pybash_runner.html#pybash_runner.available_shell_cmds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.command.pybash_runner.pybash_runner.available_shell_cmds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to get all available shell commands and store them in the
-searchable dict self.shell_cmds</p>
+searchable dict self.shell_cmds.</p>
+<p>The shell commands are found by executing:</p>
+<p>and excluding punctuation such as ‘[‘, ‘[[‘.</p>
 </dd></dl>
 
 <dl class="method">

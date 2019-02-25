@@ -88,7 +88,7 @@
 <dd><p>Bases: <a class="reference internal" href="pybash.util.html#pybash.util.std_io.pybash_io" title="pybash.util.std_io.pybash_io"><code class="xref py py-class docutils literal notranslate"><span class="pre">pybash.util.std_io.pybash_io</span></code></a></p>
 <dl class="attribute">
 <dt id="pybash.parsing.parameter_parser.parameter_parser.assignment_regex">
-<code class="descname">assignment_regex</code><em class="property"> = '^([A-Za-z0-9_]+)[ ]*=(.*)'</em><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.assignment_regex" title="Permalink to this definition">¶</a></dt>
+<code class="descname">assignment_regex</code><em class="property"> = '^([A-Za-z0-9_]+)[ ]*[^\\&gt;\\&lt;=]*=[ ]*([^=].*)$'</em><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.assignment_regex" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -104,7 +104,25 @@
 <dl class="method">
 <dt id="pybash.parsing.parameter_parser.parameter_parser.get_assignment">
 <code class="descname">get_assignment</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/parsing/parameter_parser.html#parameter_parser.get_assignment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.parsing.parameter_parser.parameter_parser.get_assignment" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Function to parse assignemnt in a command, returns output variable and cmd to be evaluated</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cmd</strong> (<em>str</em>) – Command that may be in the form ‘var = expression’ where ‘var’ is the output
+variable and ‘expression’ is a valid pybash expression</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>(expression, var) Separated input command if an assignment was detected.  If no</dt>
+<dd>assignemnt was detected, then expression = cmd and var = <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code></dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="pybash.parsing.parameter_parser.parameter_parser.length_expansion">

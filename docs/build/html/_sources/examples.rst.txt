@@ -34,5 +34,5 @@ You can pipe back and forth between shell and python - it just works!
 .. code-block:: python
     :linenos:
 
-    find . - name "\*.yaml" | [s for s in @ if 'test_str' in s] | xargs cat > out.yaml
-    dict_list = find . -name "\*.yaml" | [from_file(f) for f in @] | [d for d in @ if 'test_key' in d]
+    find . - name "\*.yaml" | [s for s in to_list(@) if 'test' in s] | xargs cat > out.yaml
+    dict_list = find . -name "\*.yaml" | [to_dict(from_file(f)) for f in to_list(@)] | [d for d in @ if 'test_key' in d]

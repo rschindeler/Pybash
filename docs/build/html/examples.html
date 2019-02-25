@@ -78,8 +78,8 @@ tail -n <span class="m">2000</span> /var/log/messages <span class="p">|</span> g
 <h2>Python + Shell<a class="headerlink" href="#python-shell" title="Permalink to this headline">¶</a></h2>
 <p>You can pipe back and forth between shell and python - it just works!</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
-2</pre></div></td><td class="code"><div class="highlight"><pre><span></span>find . - name &quot;\*.yaml&quot; | [s for s in @ if &#39;test_str&#39; in s] | xargs cat &gt; out.yaml
-dict_list = find . -name &quot;\*.yaml&quot; | [from_file(f) for f in @] | [d for d in @ if &#39;test_key&#39; in d]
+2</pre></div></td><td class="code"><div class="highlight"><pre><span></span>find . - name &quot;\*.yaml&quot; | [s for s in to_list(@) if &#39;test&#39; in s] | xargs cat &gt; out.yaml
+dict_list = find . -name &quot;\*.yaml&quot; | [to_dict(from_file(f)) for f in to_list(@)] | [d for d in @ if &#39;test_key&#39; in d]
 </pre></div>
 </td></tr></table></div>
 </div>

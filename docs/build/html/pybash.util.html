@@ -269,6 +269,19 @@ with an open file-like object (with the mode specified by mode)</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="pybash.util.pipe_util.isfile">
+<code class="descclassname">pybash.util.pipe_util.</code><code class="descname">isfile</code><span class="sig-paren">(</span><em>v</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pipe_util.html#isfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pipe_util.isfile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Function to check if a variable is a file</dt>
+<dd><ul class="first last simple">
+<li>Python 2.x: variable type will be file</li>
+<li>Python 3.x: variable will be an instance of _io.TextIOWrapper</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pybash.util.pipe_util.open_pipe">
 <code class="descclassname">pybash.util.pipe_util.</code><code class="descname">open_pipe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pipe_util.html#open_pipe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pipe_util.open_pipe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function that creates an os.pipe and opens the read / write file handels. This mimicks

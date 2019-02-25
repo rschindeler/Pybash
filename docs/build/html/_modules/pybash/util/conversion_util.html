@@ -40,7 +40,8 @@
             
   <h1>Source code for pybash.util.conversion_util</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Functions for converting variable types</span>
-<span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span>
+<span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span> <span class="k">as</span> <span class="nn">pybash_helper</span>
+<span class="kn">import</span> <span class="nn">pybash.util.pipe_util</span> <span class="k">as</span> <span class="nn">pipe_util</span>
 
 <div class="viewcode-block" id="shell_data"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.conversion_util.shell_data">[docs]</a><span class="k">def</span> <span class="nf">shell_data</span><span class="p">(</span><span class="n">var</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -55,7 +56,7 @@
 <span class="sd">        Converted variable</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">var</span><span class="p">):</span>
             <span class="n">shell_data</span> <span class="o">=</span> <span class="n">var</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">shell_data</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
@@ -74,7 +75,7 @@
 <span class="sd">    Returns: bool, int or float if the value could be converted, string if no conversion </span>
 <span class="sd">        was found.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">(</span><span class="n">to_bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pipe_util</span><span class="o">.</span><span class="n">to_bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>

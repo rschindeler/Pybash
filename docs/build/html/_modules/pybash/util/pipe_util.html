@@ -44,7 +44,11 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
 <span class="kn">import</span> <span class="nn">readline</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 
+<span class="c1"># Used for checking if variable is a file</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">_io</span>
 
 <div class="viewcode-block" id="display_std_pipe"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.display_std_pipe">[docs]</a><span class="k">def</span> <span class="nf">display_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -56,7 +60,7 @@
 <span class="sd">            are kept as-is, for others the variable type is returned. This allows the std_pipe to be</span>
 <span class="sd">            printed in debug messages in a short form (especially if some elements of std_pipe are a str)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">std_pipe</span><span class="p">]</span></div>
+    <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">if</span> <span class="p">(</span><span class="n">isfile</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">std_pipe</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="expand_std_pipe"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.expand_std_pipe">[docs]</a><span class="k">def</span> <span class="nf">expand_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">stdin</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="n">use_pipe</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -239,6 +243,17 @@
         <span class="c1"># Replace input var</span>
         <span class="k">return</span> <span class="n">new_input</span></div>
                 
+
+<div class="viewcode-block" id="isfile"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pipe_util.isfile">[docs]</a><span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to check if a variable is a file</span>
+<span class="sd">        * Python 2.x: variable type will be file</span>
+<span class="sd">        * Python 3.x: variable will be an instance of _io.TextIOWrapper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">_io</span><span class="o">.</span><span class="n">TextIOWrapper</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span></div>
 </pre></div>
 
           </div>

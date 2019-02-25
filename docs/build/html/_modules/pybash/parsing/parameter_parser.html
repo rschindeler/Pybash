@@ -289,13 +289,28 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
 
-    <span class="n">assignment_regex</span> <span class="o">=</span> <span class="s2">&quot;^([A-Za-z0-9_]+)[ ]*=(.*)&quot;</span>
-    <span class="c1"># Function to parse assignemnt in a command, returns output variable and cmd to be evaluated</span>
+    
+    <span class="c1"># This regex will pick up the first assignment (a = b) in a command</span>
+    <span class="c1"># but exclude other commands with &#39;=&#39; such as &#39;a == b&#39; or &#39;a &lt;= b&#39;</span>
+    <span class="n">assignment_regex</span> <span class="o">=</span> <span class="s1">&#39;^([A-Za-z0-9_]+)[ ]*[^\&gt;\&lt;=]*=[ ]*([^=].*)$&#39;</span>
 <div class="viewcode-block" id="parameter_parser.get_assignment"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.get_assignment">[docs]</a>    <span class="k">def</span> <span class="nf">get_assignment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to parse assignemnt in a command, returns output variable and cmd to be evaluated</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            cmd (str): Command that may be in the form &#39;var = expression&#39; where &#39;var&#39; is the output </span>
+<span class="sd">                variable and &#39;expression&#39; is a valid pybash expression</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (expression, var) Separated input command if an assignment was detected.  If no </span>
+<span class="sd">                assignemnt was detected, then expression = cmd and var = :const:`None`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Checking command for assignment: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
         <span class="n">assignment_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assignment_regex</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">assignment_match</span><span class="p">:</span>
             <span class="n">output_var</span> <span class="o">=</span> <span class="n">assignment_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">cmd</span> <span class="o">=</span> <span class="n">assignment_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Detected assignment: </span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">output_var</span><span class="p">,</span> <span class="n">cmd</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">output_var</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">output_var</span></div>

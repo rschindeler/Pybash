@@ -126,11 +126,11 @@
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_expansion</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
        
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;SHELL: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;INPUT: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stdin</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)),</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;INPUT: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stdin</span> <span class="k">if</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">stdin</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)),</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
         
         <span class="c1"># If stdin is a file descriptor, pass directly. If not, we will write stdin as a string</span>
         <span class="k">if</span> <span class="n">stdin</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdin</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">stdin</span><span class="p">):</span>
                 <span class="n">stdin_var</span> <span class="o">=</span> <span class="n">stdin</span>
                 <span class="n">write_stdin</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
@@ -240,12 +240,17 @@
         <span class="c1">####################################################################</span>
         <span class="c1"># Step 1) Get input data, initialize __inputvar__ and __outputvar__ in self.locals</span>
         <span class="c1"># If the input_data is a file descriptor, read string</span>
-        <span class="k">if</span> <span class="n">input_var</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">input_var</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">input_var</span> <span class="ow">and</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">input_var</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading file object </span><span class="si">%s</span><span class="s2"> and storing as input_var&quot;</span> <span class="o">%</span> <span class="n">input_var</span><span class="p">,</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
             <span class="n">input_var</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">input_var</span><span class="p">)</span> 
         
-        <span class="c1"># self.write_debug(&quot;input_var: %s&quot; % input_var, &quot;run_python_cmd&quot;)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="s1">&#39;__inputvar__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_var</span>
+        <span class="c1"># Initialize the special __inputvar__ variable</span>
+        <span class="c1">#   Python 3.x: Use globals so commands like &#39;[@[f] for f in @] for&#39;</span>
+        <span class="c1">#   Python 2.x  Use locals since this does not seem to be a problem</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">[</span><span class="s1">&#39;__inputvar__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_var</span>
+        <span class="k">else</span><span class="p">:</span>   
+            <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="s1">&#39;__inputvar__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_var</span>
         <span class="c1"># Initialize __outputvar__ to None in self.locals  - may have been set by a previous cmd</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="s1">&#39;__outputvar__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         
@@ -271,7 +276,7 @@
                 <span class="n">capture_output_var</span>  <span class="o">=</span> <span class="kc">False</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;Could not compile: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                 <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
@@ -281,8 +286,13 @@
         <span class="c1"># Step 3: Execute the command</span>
         <span class="c1"># a) Create StringIO for out/error</span>
         <span class="c1"># - after doing this, don&#39;t print anything until out/err are restored!</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
         <span class="c1"># Capture out/err</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">out</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">err</span>
@@ -291,9 +301,9 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">exec</span><span class="p">(</span><span class="n">cmd_c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="k">pass</span>
-
+        
         <span class="c1"># c) restore orig out/err</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">__stdout__</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">__stderr__</span>
@@ -303,7 +313,7 @@
         <span class="n">out</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="n">err</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Restored stdout/stderr&quot;</span><span class="p">,</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
-
+        
         <span class="c1">####################################################################</span>
         <span class="c1"># Step 4: Add output to pipe or print to sys.stdout/sys.stderr</span>
         
@@ -331,7 +341,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Adding src to </span><span class="si">%s</span><span class="s2"> queue&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
                     <span class="n">pipe</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
                 <span class="c1"># If pipe is a file-like object, write to file</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pipe</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Writing </span><span class="si">%s</span><span class="s2"> src to file </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pipe</span><span class="p">),</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
                     <span class="n">pipe</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
                 <span class="c1"># If pipe is None, print using print function</span>
@@ -346,7 +356,7 @@
         <span class="c1">#    - there is no subprocess for python commands</span>
         <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                     <span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="c1"># Replace with None so that run_cmd() knows not to expect anything</span>
@@ -439,7 +449,7 @@
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
                         <span class="k">continue</span>
                     <span class="c1"># Check to see if &#39;(@)&#39; should be added</span>
-                    <span class="n">f_call_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fn</span> <span class="o">+</span> <span class="s2">&quot;\([^\)]*\)&quot;</span><span class="p">,</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">f_call_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;.*&#39;</span> <span class="o">+</span> <span class="n">fn</span> <span class="o">+</span> <span class="s2">&quot;\([^\)]*\)&quot;</span><span class="p">,</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
                     <span class="k">if</span> <span class="n">f_call_match</span><span class="p">:</span>
                         <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;pybash_helper.&quot;</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -454,6 +464,7 @@
         <span class="c1"># b) Check to see if the first element of cmd is a known shell function</span>
         <span class="c1">#   - exclude python keywords such as import (which may also be valid shell commands)</span>
         <span class="k">elif</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">python_keyword_match</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;First word &#39;</span><span class="si">%s</span><span class="s2">&#39; matched a shell command and is not a python keyword, executing as shell command&quot;</span> <span class="o">%</span> <span class="n">cmd_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;run_cmd&quot;</span><span class="p">)</span>
             <span class="c1"># If input data is provided, format special variable types for shell compatibility</span>
             <span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">conversion_util</span><span class="o">.</span><span class="n">shell_data</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="n">std_pipe</span><span class="p">)</span> 
@@ -495,7 +506,7 @@
         <span class="c1"># c) Inintialize the &quot;location&quot; of [stdin, stdout, stderr] for the pipeline</span>
         <span class="c1">#    - For the first iteration, stdin = None</span>
         <span class="n">std_pipe</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        
+        <span class="n">process</span> <span class="o">=</span> <span class="kc">None</span> 
         <span class="c1">#######################################################################</span>
         <span class="c1"># Step 2) Execute each part of the pipeline, passing output of each stage along</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)):</span>
@@ -532,7 +543,7 @@
                 <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">process</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">last_cmd</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s2">&quot;failed to execute: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                 <span class="k">break</span>
             
@@ -555,7 +566,7 @@
         <span class="k">if</span> <span class="n">output_var</span><span class="p">:</span>
             <span class="c1"># Read stdout from std_pipe[1] (either a file-like object or deque)</span>
             <span class="n">stdout</span> <span class="o">=</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">stdout</span><span class="p">):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">stdout</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading file </span><span class="si">%s</span><span class="s2"> and assigning to output variable </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="n">output_var</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
                     <span class="n">stdout_result</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
@@ -575,7 +586,7 @@
             <span class="k">if</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;printing std_pipe[</span><span class="si">%i</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span> 
                 <span class="c1"># If this is a file, check to see if open </span>
-                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">file</span> <span class="ow">and</span> <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="ow">and</span> <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">readline</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
                         <span class="n">print_fn</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">line</span><span class="p">,</span> <span class="n">print_line</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="n">std_pipe</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -586,18 +597,40 @@
 <div class="viewcode-block" id="pybash_runner.available_shell_cmds"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.available_shell_cmds">[docs]</a>    <span class="k">def</span> <span class="nf">available_shell_cmds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Function to get all available shell commands and store them in the </span>
-<span class="sd">        searchable dict self.shell_cmds </span>
+<span class="sd">        searchable dict self.shell_cmds. </span>
 
+<span class="sd">        The shell commands are found by executing:</span>
+<span class="sd">        </span>
+<span class="sd">        .. code-blick:: bash</span>
+<span class="sd">        </span>
+<span class="sd">            compgen -A function -ack</span>
+
+<span class="sd">        and excluding punctuation such as &#39;[&#39;, &#39;[[&#39;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># Execute compgen to get all commands</span>
         <span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_cmd</span><span class="p">(</span><span class="s2">&quot;compgen -A function -ack&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
         <span class="n">cmd_list_str</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="n">cmd_list</span> <span class="o">=</span> <span class="n">cmd_list_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+       
+        <span class="c1"># List of characters to exclude</span>
+        <span class="n">char_exclude_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;[&#39;</span><span class="p">,</span> <span class="s1">&#39;]&#39;</span><span class="p">,</span> <span class="s1">&#39;{&#39;</span><span class="p">,</span> <span class="s1">&#39;}&#39;</span><span class="p">,</span> <span class="s1">&#39;(&#39;</span><span class="p">,</span> <span class="s1">&#39;)&#39;</span><span class="p">,</span> <span class="s1">&#39;!&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">]</span>
+
         <span class="c1"># Store in special hash</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cmd_list</span><span class="p">:</span>
-           <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># Check for punctuation</span>
+            <span class="c1">#  - this can mess things up</span>
+            <span class="n">exclude</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">char_exclude_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
+                    <span class="n">exclude</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">exclude</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># add to hash</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Loaded </span><span class="si">%i</span><span class="s2"> shell commands&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span><span class="p">),</span> <span class="s2">&quot;available_shell_cmds&quot;</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="pybash_runner.initialize_environment_variables"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.initialize_environment_variables">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_environment_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
