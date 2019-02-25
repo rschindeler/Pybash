@@ -1,0 +1,4 @@
+
+http://docutils.sourceforge.net/docs/user/rst/quickref.html
+https://gisellezeno.com/tutorials/sphinx-for-python-documentation.html
+https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
