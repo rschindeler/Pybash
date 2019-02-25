@@ -5,7 +5,7 @@ import readline
 import atexit
 import traceback
 import argparse
-import pybash.util.conversion_util
+import pybash.util.conversion_util as conversion_util
 import pybash.util.history_util
 
 from pybash.util.std_io import pybash_io
@@ -88,7 +88,7 @@ class pybash_cmd(Cmd, pybash_io):
         # 1) Initialize interpreter local + global "scope"
         self.locals = {}
         self.globals = {}
-        exec('import pybash.util.pybash_helper', self.globals, self.locals)
+        exec('import pybash.util.pybash_helper as pybash_helper', self.globals, self.locals)
 
         # 2) Get commands and environment variables from user's default shell
         # Initialize the list of commands and aliases available in the user's shell

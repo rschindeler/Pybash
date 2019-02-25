@@ -203,8 +203,13 @@ class pybash_runner(pybash_parser, pybash_io):
             self.write_debug("Reading file object %s and storing as input_var" % input_var, "run_python_cmd")
             input_var = pipe_util.read_close_fd(input_var) 
         
-        # self.write_debug("input_var: %s" % input_var, "run_python_cmd")
-        self.locals['__inputvar__'] = input_var
+        # Initialize the special __inputvar__ variable
+        #   Python 3.x: Use globals so commands like '[@[f] for f in @] for'
+        #   Python 2.x  Use locals since this does not seem to be a problem
+        if sys.version_info >= (3, 0):
+            self.globals['__inputvar__'] = input_var
+        else:   
+            self.locals['__inputvar__'] = input_var
         # Initialize __outputvar__ to None in self.locals  - may have been set by a previous cmd
         self.locals['__outputvar__'] = None
         
@@ -230,7 +235,7 @@ class pybash_runner(pybash_parser, pybash_io):
                 capture_output_var  = False
             except (SyntaxError, TypeError) as e:
                 self.print_error("Could not compile: %s" % cmd)
-                self.stderr_write(e)
+                self.stderr_write(str(e) + '\n')
                 self.stderr_write(traceback.format_exc())
                 return None, None, None
 
@@ -255,9 +260,9 @@ class pybash_runner(pybash_parser, pybash_io):
         try:
             exec(cmd_c, self.globals, self.locals)
         except Exception as e:
-            sys.stderr.write(e)
+            sys.stderr.write(str(e) + '\n')
             pass
-
+        
         # c) restore orig out/err
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -267,7 +272,7 @@ class pybash_runner(pybash_parser, pybash_io):
         out.close()
         err.close()
         self.write_debug("Restored stdout/stderr", "run_python_cmd")
-
+        
         ####################################################################
         # Step 4: Add output to pipe or print to sys.stdout/sys.stderr
         
@@ -418,6 +423,7 @@ class pybash_runner(pybash_parser, pybash_io):
         # b) Check to see if the first element of cmd is a known shell function
         #   - exclude python keywords such as import (which may also be valid shell commands)
         elif cmd_parts[0] in self.shell_cmds and not pybash_helper.python_keyword_match(cmd_parts[0]):
+            self.write_debug("First word '%s' matched a shell command and is not a python keyword, executing as shell command" % cmd_parts[0], "run_cmd")
             # If input data is provided, format special variable types for shell compatibility
             std_pipe[0] = conversion_util.shell_data(std_pipe[0])
             return self.run_shell_cmd(cmd, std_pipe=std_pipe) 
@@ -459,7 +465,7 @@ class pybash_runner(pybash_parser, pybash_io):
         # c) Inintialize the "location" of [stdin, stdout, stderr] for the pipeline
         #    - For the first iteration, stdin = None
         std_pipe = [None, None, None]
-        
+        process = None 
         #######################################################################
         # Step 2) Execute each part of the pipeline, passing output of each stage along
         for i in range(len(pipeline)):
@@ -491,12 +497,14 @@ class pybash_runner(pybash_parser, pybash_io):
             self.write_debug("std_pipe this stage: %s" % pipe_util.display_std_pipe(std_pipe), "run_pipeline")
             
             # c) Run command, get [stdout, stderr, subprocess.Popen() object]
+            process = None
+            std_pipe[1], std_pipe[2], process = self.run_cmd(cmd, std_pipe=std_pipe, last_cmd = (i==len(pipeline)-1)) 
             try:
                 process = None
                 std_pipe[1], std_pipe[2], process = self.run_cmd(cmd, std_pipe=std_pipe, last_cmd = (i==len(pipeline)-1)) 
             except Exception as e:
                 self.print_error("failed to execute: %s" % cmd)
-                self.stderr_write(e)
+                self.stderr_write(str(e))
                 self.write_debug(traceback.format_exc())
                 break
             
@@ -550,18 +558,40 @@ class pybash_runner(pybash_parser, pybash_io):
     def available_shell_cmds(self):
         """
         Function to get all available shell commands and store them in the 
-        searchable dict self.shell_cmds 
+        searchable dict self.shell_cmds. 
 
+        The shell commands are found by executing:
+        
+        .. code-blick:: bash
+        
+            compgen -A function -ack
+
+        and excluding punctuation such as '[', '[['.
         """
         
         # Execute compgen to get all commands
         s, e, p = self.run_shell_cmd("compgen -A function -ack", stdout=subprocess.PIPE)
         cmd_list_str = pipe_util.read_close_fd(s)
         cmd_list = cmd_list_str.split(os.linesep)
+       
+        # List of characters to exclude
+        char_exclude_list = ['[', ']', '{', '}', '(', ')', '!', ':']
+
         # Store in special hash
         self.shell_cmds = {}
         for c in cmd_list:
-           self.shell_cmds[c] = 1
+            # Check for punctuation
+            #  - this can mess things up
+            exclude = False
+            for e in char_exclude_list:
+                if e in c:
+                    exclude = True
+                    break
+            if exclude:
+                continue
+            # add to hash
+            self.shell_cmds[c] = 1
+        
         self.write_debug("Loaded %i shell commands" % len(self.shell_cmds), "available_shell_cmds")
     
     def initialize_environment_variables(self):
