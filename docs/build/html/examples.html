@@ -47,10 +47,10 @@
             
   <div class="section" id="examples">
 <h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
-<p>Some examples of commands that can be executed in the pybash interpreter:</p>
+<p>Some examples of commands that can be executed in the Pybash interpreter:</p>
 <div class="section" id="pure-shell">
 <h2>Pure Shell<a class="headerlink" href="#pure-shell" title="Permalink to this headline">¶</a></h2>
-<p>You can use the pybash shell just like any regular old linux shell (in fact, you can pick your own shell!)</p>
+<p>You can use the Pybash shell just like any regular old Linux shell (in fact, you can pick your own shell!)</p>
 <div class="highlight-bash notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nb">cd</span> ~/test
@@ -61,7 +61,7 @@ tail -n <span class="m">2000</span> /var/log/messages <span class="p">|</span> g
 </div>
 <div class="section" id="pure-python">
 <h2>Pure Python<a class="headerlink" href="#pure-python" title="Permalink to this headline">¶</a></h2>
-<p>You can use the pybash shell just like the standard python shell</p>
+<p>You can use the Pybash shell just like the standard python shell</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
@@ -77,7 +77,7 @@ tail -n <span class="m">2000</span> /var/log/messages <span class="p">|</span> g
 <div class="section" id="python-shell">
 <h2>Python + Shell<a class="headerlink" href="#python-shell" title="Permalink to this headline">¶</a></h2>
 <p>You can pipe back and forth between shell and python - it just works!</p>
-<p>Each “stage” in the pipeline is either interpreted as shell or python. Pybash inlcudes some
+<p>Each “stage” in the pipeline is either interpreted as shell or python. Pybash includes some
 helper functions to ease the transition.</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2</pre></div></td><td class="code"><div class="highlight"><pre><span></span>find . - name &quot;\*.yaml&quot; | [s for s in to_list(@) if &#39;test&#39; in s] | xargs cat &gt; out.yaml
@@ -87,19 +87,41 @@ dict_list = find . -name &quot;\*.yaml&quot; | [to_dict(from_file(f)) for f in t
 <p>See <a href="#id1"><span class="problematic" id="id2">:module:`pybash.util.pybash_helper`</span></a> for details on the available helper functions.</p>
 <p>When piping to a python stage, ‘&#64;’ is interpreted as the input variable from
 the previous stage. The following examples shows how this is done:</p>
-<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
-2
-3
-4
-5
-6
-7</pre></div></td><td class="code"><div class="highlight"><pre><span></span># Explicit variables
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10</pre></div></td><td class="code"><div class="highlight"><pre><span></span># Explicit variables
 var_str = find . -name &quot;*.yaml&quot; # This will store results as a string
 var_list = var_str.split(&#39;\n&#39;) # Convert to list by splitting newlines
 # Implicit piping
 var_list = find . -name &quot;*.yaml&quot; | @.split()   # Use &#39;@&#39; as a stand-in for the input variables
 var_list = find . -name &quot;*.yaml&quot; | to_list(@) # Use the pybash_helper function &#39;to_list()&#39;
 var_list = find . -name &quot;*.yaml&quot; | to_list     # Use short-form for the &#39;to_list()&#39; function
+
+import os
+files = ls | to_list | [from_file(f) for f in @ if os.path.isfile(f)]
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="pybash-special-commands">
+<h2>Pybash Special commands<a class="headerlink" href="#pybash-special-commands" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c1"># Set debug flag</span>
+<span class="nb">set</span> <span class="nv">debug</span><span class="o">=</span>True
+
+<span class="c1"># View and modify the default shell</span>
+show shell
+<span class="nb">set</span> <span class="nv">shell</span><span class="o">=</span>/bin/sh
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -117,6 +139,7 @@ var_list = find . -name &quot;*.yaml&quot; | to_list     # Use short-form for th
 <li><a class="reference internal" href="#pure-shell">Pure Shell</a></li>
 <li><a class="reference internal" href="#pure-python">Pure Python</a></li>
 <li><a class="reference internal" href="#python-shell">Python + Shell</a></li>
+<li><a class="reference internal" href="#pybash-special-commands">Pybash Special commands</a></li>
 </ul>
 </li>
 </ul>

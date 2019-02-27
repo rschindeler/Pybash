@@ -40,8 +40,8 @@
             
   <h1>Source code for pybash.util.pybash_helper</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This file contains helper functions for the pybash interpreter</span>
-<span class="sd">These functions can be used in a pipeline to facilitagte moving between bash and python</span>
+<span class="sd">This file contains helper functions for the Pybash interpreter</span>
+<span class="sd">These functions can be used in a pipeline to facilitate moving between bash and python</span>
 <span class="sd">e.g. &quot;find . | to_list&quot; will get the stdout of &quot;find .&quot; and convert each line to an element in a list</span>
 
 <span class="sd">This file will be imported within the interpreters &quot;scope&quot; so that the functions are accessible</span>
@@ -56,10 +56,10 @@
 
 <div class="viewcode-block" id="function_match"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pybash_helper.function_match">[docs]</a><span class="k">def</span> <span class="nf">function_match</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Function used by pybash to determine if a command is a pybash_helper function</span>
+<span class="sd">    Function used by Pybash to determine if a command is a pybash_helper function</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
-<span class="sd">        s (str): Command string which may contain pybash helper functions</span>
+<span class="sd">        s (str): Command string which may contain Pybash helper functions</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        list: List of functions found in input string</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -73,7 +73,7 @@
 
 <div class="viewcode-block" id="python_keyword_match"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pybash_helper.python_keyword_match">[docs]</a><span class="k">def</span> <span class="nf">python_keyword_match</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Function used by pybash to check if a command is a python keyword</span>
+<span class="sd">    Function used by Pybash to check if a command is a python keyword</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        c (str): Command which is matched against python keywords</span>
@@ -115,7 +115,7 @@
 
 <div class="viewcode-block" id="to_str"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pybash_helper.to_str">[docs]</a><span class="k">def</span> <span class="nf">to_str</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Function to convert input variable to string, using special formating for dicts and lists.</span>
+<span class="sd">    Function to convert input variable to string, using special formatting for dicts and lists.</span>
 <span class="sd">    TODO: Add support for json</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
@@ -170,7 +170,7 @@
 
 <div class="viewcode-block" id="from_file"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pybash_helper.from_file">[docs]</a><span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="n">f_name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Function to read a file and return the contents as a strting</span>
+<span class="sd">    Function to read a file and return the contents as a string</span>
 <span class="sd">    </span>
 <span class="sd">    Args: </span>
 <span class="sd">        f_name (str): File path to read from</span>
@@ -187,7 +187,7 @@
 
 <div class="viewcode-block" id="show_history"><a class="viewcode-back" href="../../../pybash.util.html#pybash.util.pybash_helper.show_history">[docs]</a><span class="k">def</span> <span class="nf">show_history</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Function to show the pybash histroy. This function is invoked by the pybash_cmd.do_history(),</span>
+<span class="sd">    Function to show the Pybash history. This function is invoked by the pybash_cmd.do_history(),</span>
 <span class="sd">    allowing the history to be displayed when the user enters the command: &#39;history&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     

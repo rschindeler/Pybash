@@ -51,20 +51,14 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Pybash</span>
 
-<span class="sd">TODOs:</span>
-<span class="sd">    - Python 3 seems to have a different scope when doing list compresions</span>
-<span class="sd">      This is stopping pybash_helper functions from being used in the &quot;first&quot; part:</span>
-<span class="sd">       - broken in 3.x: [to_list(f) for f in @] </span>
-<span class="sd">       - works in 3.x: [ f for f in to_list(@)]</span>
-<span class="sd">       - also had to put __inputvar__ in self.globals for python 3.x</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="pybash"><a class="viewcode-back" href="../index.html#app.pybash">[docs]</a><span class="k">class</span> <span class="nc">pybash</span><span class="p">(</span><span class="n">pybash_cmd</span><span class="p">,</span> <span class="n">pybash_runner</span><span class="p">):</span>
+<div class="viewcode-block" id="pybash"><a class="viewcode-back" href="../app.html#app.pybash">[docs]</a><span class="k">class</span> <span class="nc">pybash</span><span class="p">(</span><span class="n">pybash_cmd</span><span class="p">,</span> <span class="n">pybash_runner</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Main pybash application class</span>
+<span class="sd">    Main Pybash application class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-<div class="viewcode-block" id="pybash.default"><a class="viewcode-back" href="../index.html#app.pybash.default">[docs]</a>    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipeline_cmd</span><span class="p">):</span>
+<div class="viewcode-block" id="pybash.default"><a class="viewcode-back" href="../app.html#app.pybash.default">[docs]</a>    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipeline_cmd</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Override the cmd.Cmd function that must be declared to parse arbitrary commands</span>
 <span class="sd">        &quot;&quot;&quot;</span>

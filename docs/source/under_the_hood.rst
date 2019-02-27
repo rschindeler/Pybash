@@ -19,7 +19,7 @@ which parts by the shell.
 Overview
 ---------------------------------
 
-The pybash interpreter is launched by creating an instance of the |pybash| class and calling its
+The Pybash interpreter is launched by creating an instance of the |pybash| class and calling its
 cmdloop() method (see :meth:`cmd.Cmd.cmdloop`). The |pybash| class extends the following:
 
     * |pybash_cmd|
@@ -30,7 +30,7 @@ cmdloop() method (see :meth:`cmd.Cmd.cmdloop`). The |pybash| class extends the f
     * |pybash_runner| 
         * Contains methods for executing shell and python commands
         * Splits pipeline commands into their stages and manages the piping between them
-        * Handels redirects to files, python variables
+        * Handles redirects to files, python variables
 
 Command Execution Flow
 ---------------------------------
@@ -39,9 +39,9 @@ Each command (which may contain multiple pipeline stages) is evaluated as follow
 
     1. The :meth:`cmd.Cmd.precmd` method is executed which will expand bash-like designators 
         - For example: !$, !!
-    2. :class:`cmd.Cmd` checks for special pybash commands such as cd, history
+    2. :class:`cmd.Cmd` checks for special Pybash commands such as cd, history
     3. The :meth:`cmd.Cmd.default` method is executed if no special commands were found, kicking off
-       the main pybash command parsing method: |run_pipeline|
+       the main Pybash command parsing method: |run_pipeline|
     4. |run_pipeline| splits the input line by '|' 
        and kicks off the execution of each stage of the pipeline
         - The standard pipe is initiated and managed by this method
@@ -56,23 +56,23 @@ Each command (which may contain multiple pipeline stages) is evaluated as follow
 
 Pipes and Redirects
 ---------------------------------
-Pybash handels piping and redirects using the std_pipe variable.  This is a 3-element tuple
+Pybash handles piping and redirects using the std_pipe variable.  This is a 3-element tuple
 which contains the "location" of (stdin, stdout, stderr). The std_pipe is created by |run_pipeline|
 before executing the first stage of the pipeline, and is passed to each subsequent stage.
 
 The elements of std_pipe will resolve to either a file-like object (e.g. a file or :func:`os.pipe`), 
 :const:`None`, or */dev/null*. More details on std_pipe bellow.
 
-Redirects are perfomed by changing the "location" in std_pipe to either another file-like
-object or to reference the location of another element in std_pipe. This allows pybash to
+Redirects are performed by changing the "location" in std_pipe to either another file-like
+object or to reference the location of another element in std_pipe. This allows Pybash to
 emulate bash-like redirects such as 'cmd > foo' or 'cmd > foo 2>&1'.
 
-Redirects are parsed BEFORE knowning if it is a shell or python cmd
+Redirects are parsed BEFORE knowing if it is a shell or python cmd
    - For this to work, |run_shell_cmd| and |run_python_cmd| must treat std_pipe the same way
    - Opening pipes occurs inside these commands since they do so in different ways
        - shell: pipe = r/w pair of file handles
        - python: pipe = collections.deque object
-   - Opening files occures before |run_shell_cmd| / |run_python_cmd| 
+   - Opening files occurs before |run_shell_cmd| / |run_python_cmd| 
        - Files are opened the same way
        - The read / write / append mode must be known, these commands are agnostic to this
 

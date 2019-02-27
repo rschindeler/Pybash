@@ -44,16 +44,26 @@
 <span class="kn">from</span> <span class="nn">pybash.util.std_io</span> <span class="k">import</span> <span class="n">pybash_io</span>
 <span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span>
 
-<span class="c1"># Class to handle the parsing and expansion of bash-like parameters (e.g. ${var:3})</span>
 <div class="viewcode-block" id="parameter_parser"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser">[docs]</a><span class="k">class</span> <span class="nc">parameter_parser</span><span class="p">(</span><span class="n">pybash_io</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to handle the parsing and expansion of bash-like parameters (e.g. ${var:3})</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Function to perform bash-like parameter expansion</span>
     <span class="n">shell_param_regex</span> <span class="o">=</span> <span class="s1">&#39;\$([a-zA-Z0-9_]+)&#39;</span>
     <span class="n">shell_param_brace_regex</span> <span class="o">=</span> <span class="s1">&#39;\${([^}^$]+)}&#39;</span>
-    <span class="c1"># Function to perform bash-like parameter expansion </span>
     <span class="c1"># Based on: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html</span>
 <div class="viewcode-block" id="parameter_parser.parameter_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.parameter_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">parameter_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
-        <span class="c1"># Loop untill all parameter expansions have been processed</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to perform bash-like parameter expansion </span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd (str): Command string which may contain bash-like parameters</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (str): Modified command string with expanded parameters</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Loop until all parameter expansions have been processed</span>
         <span class="n">expansion_limit</span> <span class="o">=</span> <span class="mi">100</span>
         <span class="n">expansion_counter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -69,7 +79,7 @@
                 <span class="c1"># First try parameter expansions in curly braces</span>
                 <span class="k">if</span> <span class="n">param_brace_match</span><span class="p">:</span>
                     <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">param_brace_match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">param_brace_match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
-                    <span class="c1"># Get the full paramter to expand</span>
+                    <span class="c1"># Get the full parameter to expand</span>
                     <span class="n">param</span> <span class="o">=</span> <span class="n">param_brace_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing brace parameter expansion for param </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">param</span><span class="p">,</span> <span class="s2">&quot;parameter_expansion&quot;</span><span class="p">)</span>
                     
@@ -90,14 +100,14 @@
                     <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">):</span>
                         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="c1"># Default case: ${parameter} or ${paramer[index]}</span>
+                        <span class="c1"># Default case: ${parameter} or ${paramter[index]}</span>
                         <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_var_expansion</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">var</span><span class="p">:</span>
                             <span class="n">out</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">to_str</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">single_line</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                         
-                <span class="c1"># Second try simple paramter expansion</span>
+                <span class="c1"># Second try simple parameter expansion</span>
                 <span class="k">if</span> <span class="n">param_match</span><span class="p">:</span>
                     <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">param_match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">param_match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
                     <span class="n">param</span> <span class="o">=</span> <span class="n">param_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
@@ -115,10 +125,10 @@
                         <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                 
                 <span class="c1"># Perform substitution</span>
-                <span class="c1"># TODO: this will overrite any environemnt variables</span>
+                <span class="c1"># TODO: this will overwrite any environment variables</span>
                 <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">out</span> <span class="o">+</span> <span class="n">cmd</span><span class="p">[</span><span class="n">end</span><span class="p">:]</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-               <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s1">&#39;Invalid prarameter expansion: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">print_error</span><span class="p">(</span><span class="s1">&#39;Invalid parameter expansion: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                <span class="k">break</span>
@@ -254,8 +264,8 @@
         <span class="c1"># otherwise: This is a Substring Expansion</span>
         <span class="c1">#       ${parameter:offset} / ${parameter:offset:length}</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># - expands to up to &quot;length&quot; characters of the value of &quot;parameter&quot; starting at the caracter specified by &quot;offset&quot;</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Unknown subsitition operation </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">param_parts</span><span class="p">))</span></div>
+            <span class="c1"># - expands to up to &quot;length&quot; characters of the value of &quot;parameter&quot; starting at the character specified by &quot;offset&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Unknown substitution operation </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">param_parts</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="parameter_parser.substring_expansion"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.substring_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">substring_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_parts</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Performing substring expansion &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">param_parts</span><span class="p">,</span> <span class="s2">&quot;substring_expansion&quot;</span><span class="p">)</span>
@@ -295,14 +305,14 @@
     <span class="n">assignment_regex</span> <span class="o">=</span> <span class="s1">&#39;^([A-Za-z0-9_]+)[ ]*[^\&gt;\&lt;=]*=[ ]*([^=].*)$&#39;</span>
 <div class="viewcode-block" id="parameter_parser.get_assignment"><a class="viewcode-back" href="../../../pybash.parsing.html#pybash.parsing.parameter_parser.parameter_parser.get_assignment">[docs]</a>    <span class="k">def</span> <span class="nf">get_assignment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Function to parse assignemnt in a command, returns output variable and cmd to be evaluated</span>
+<span class="sd">        Function to parse assignment in a command, returns output variable and cmd to be evaluated</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            cmd (str): Command that may be in the form &#39;var = expression&#39; where &#39;var&#39; is the output </span>
 <span class="sd">                variable and &#39;expression&#39; is a valid pybash expression</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (expression, var) Separated input command if an assignment was detected.  If no </span>
-<span class="sd">                assignemnt was detected, then expression = cmd and var = :const:`None`</span>
+<span class="sd">                assignment was detected, then expression = cmd and var = :const:`None`</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Checking command for assignment: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>

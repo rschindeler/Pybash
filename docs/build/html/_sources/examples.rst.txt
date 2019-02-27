@@ -1,11 +1,11 @@
 
 Examples
 =========================
-Some examples of commands that can be executed in the pybash interpreter:
+Some examples of commands that can be executed in the Pybash interpreter:
 
 Pure Shell
 -------------------------
-You can use the pybash shell just like any regular old linux shell (in fact, you can pick your own shell!)
+You can use the Pybash shell just like any regular old Linux shell (in fact, you can pick your own shell!)
 
 .. code-block:: bash
     :linenos:
@@ -16,7 +16,7 @@ You can use the pybash shell just like any regular old linux shell (in fact, you
 
 Pure Python
 -------------------------
-You can use the pybash shell just like the standard python shell
+You can use the Pybash shell just like the standard python shell
 
 .. code-block:: python
     :linenos:
@@ -31,7 +31,7 @@ Python + Shell
 -------------------------
 You can pipe back and forth between shell and python - it just works!
 
-Each "stage" in the pipeline is either interpreted as shell or python. Pybash inlcudes some 
+Each "stage" in the pipeline is either interpreted as shell or python. Pybash includes some 
 helper functions to ease the transition.
 
 .. code-block:: python
@@ -55,3 +55,20 @@ the previous stage. The following examples shows how this is done:
     var_list = find . -name "*.yaml" | @.split()   # Use '@' as a stand-in for the input variables
     var_list = find . -name "*.yaml" | to_list(@) # Use the pybash_helper function 'to_list()'
     var_list = find . -name "*.yaml" | to_list     # Use short-form for the 'to_list()' function
+    
+    import os
+    files = ls | to_list | [from_file(f) for f in @ if os.path.isfile(f)]
+
+
+Pybash Special commands
+-------------------------
+
+.. code-block:: bash
+    :linenos:
+
+    # Set debug flag
+    set debug=True
+
+    # View and modify the default shell
+    show shell
+    set shell=/bin/sh

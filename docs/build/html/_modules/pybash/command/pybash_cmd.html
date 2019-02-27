@@ -59,14 +59,14 @@
 <span class="sd">       - extends pybash_io for stdout / stderr printing functions</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        banner (str): the banner text printed when starting interactive pybash shell</span>
+<span class="sd">        banner (str): the banner text printed when starting interactive Pybash shell</span>
 <span class="sd">        prompt_separator (str): Text printed in the command-line prompt after the file path </span>
 <span class="sd">        user_home (str): The home directory of the user, default to &#39;~&#39;</span>
-<span class="sd">        history_file (str): Path of the pybash history file</span>
-<span class="sd">        cmd_flags (dict): Dictionary that stores pybash configuration values such as:</span>
+<span class="sd">        history_file (str): Path of the Pybash history file</span>
+<span class="sd">        cmd_flags (dict): Dictionary that stores Pybash configuration values such as:</span>
 <span class="sd">            1. debug: If True, then debug statements are printed</span>
 <span class="sd">            2. shell: UNIX shell used to execute shell commands, defaults to /bin/bash</span>
-<span class="sd">            3. max_autocomplete: limits the number of items displayed when autocompleting paths</span>
+<span class="sd">            3. max_autocomplete: limits the number of items displayed when auto-completing paths</span>
 <span class="sd">               and names before prompting user if they want to display all possibilities</span>
 <span class="sd">        cmd_flag_types (dict): Used to enforce valid variable types for the values stored in</span>
 <span class="sd">            cmd_flags (for example, debug must be a bool variable). The special &#39;file_exists&#39; str</span>
@@ -76,19 +76,19 @@
 <span class="sd">            is itself a dict which controls the alias behaviour for different pipeline stages:</span>
 <span class="sd">            Format: {&#39;alias_cmd&#39;: {-1: &lt;val for last pipeline stage&gt;, 0: &lt;val for other stages&gt;}}</span>
 <span class="sd">            Example: {&#39;ll&#39;:    {0: &#39;ls -lrt&#39;, -1: &#39;ls -lrt --color=auto&#39;}}</span>
-<span class="sd">            If the &#39;0&#39; or &#39;-1&#39; value is ommited, the alias is not applied for those stages.</span>
+<span class="sd">            If the &#39;0&#39; or &#39;-1&#39; value is omitted, the alias is not applied for those stages.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     
     <span class="c1">####################################################################################</span>
     <span class="c1"># DEFINITIONS</span>
     <span class="c1">####################################################################################</span>
-    <span class="n">banner</span> <span class="o">=</span> <span class="s2">&quot;Welcome to pybash! A pythonic way to use your favourite shell&quot;</span>
+    <span class="n">banner</span> <span class="o">=</span> <span class="s2">&quot;Welcome to Pybash! A pythonic way to use your favourite shell&quot;</span>
     <span class="n">prompt_separator</span> <span class="o">=</span> <span class="s2">&quot;% &quot;</span>
     <span class="n">user_home</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">)</span>
     <span class="n">history_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_home</span><span class="p">,</span> <span class="s2">&quot;.pybash&quot;</span><span class="p">)</span>
     
-    <span class="c1"># Dict to store flags used by the pybash interpreter</span>
+    <span class="c1"># Dict to store flags used by the Pybash interpreter</span>
     <span class="n">cmd_flags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> 
                  <span class="s1">&#39;shell&#39;</span><span class="p">:</span> <span class="s1">&#39;/bin/bash&#39;</span><span class="p">,</span> 
                  <span class="s1">&#39;shell_source&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_home</span><span class="p">,</span> <span class="s1">&#39;.bashrc&#39;</span><span class="p">),</span> 
@@ -117,7 +117,7 @@
 <span class="sd">        Override of the cmd.Cmd function which is called when the terminal prompt loop is </span>
 <span class="sd">        first entered. Performs the following:</span>
 <span class="sd">            1. Initialize the interpreter&#39;s local and global dicts in order to maintain a separate </span>
-<span class="sd">               &quot;scope&quot; from the pybash program. Import the pybash_helper module so that it is </span>
+<span class="sd">               &quot;scope&quot; from the Pybash program. Import the pybash_helper module so that it is </span>
 <span class="sd">               available when executing commands.</span>
 <span class="sd">            2. Initialize the list of commands and environment variables available in the user&#39;s </span>
 <span class="sd">               default shell.</span>
@@ -265,7 +265,7 @@
 <div class="viewcode-block" id="pybash_cmd.do_sudo"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_sudo">[docs]</a>    <span class="k">def</span> <span class="nf">do_sudo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Override shell sudo command</span>
-<span class="sd">          - if &#39;sudo -i&#39; is used, launch pybash as root</span>
+<span class="sd">          - if &#39;sudo -i&#39; is used, launch Pybash as root</span>
 <span class="sd">          - else, run shell sudo command</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;-i&#39;</span><span class="p">:</span>
@@ -280,11 +280,11 @@
 <div class="viewcode-block" id="pybash_cmd.do_history"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.do_history">[docs]</a>    <span class="k">def</span> <span class="nf">do_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Emulates the bash history command. Usage:</span>
-<span class="sd">            * -c / --clear: Clears the pybash history</span>
+<span class="sd">            * -c / --clear: Clears the Pybash history</span>
 <span class="sd">            * -d / --delete (int) delete a specific history line</span>
 <span class="sd">            * -a / --append [file] append all new history lines from this session to history file, </span>
 <span class="sd">              or to file specified</span>
-<span class="sd">            * -n / --new [file] read lines from history file created after pybash launched, </span>
+<span class="sd">            * -n / --new [file] read lines from history file created after Pybash launched, </span>
 <span class="sd">              or from file specified </span>
 
 <span class="sd">        The line will be parsed using an argparse.ArgumentParser. If no history arguments are </span>
@@ -353,7 +353,7 @@
         <span class="c1"># d) Perform history new</span>
         <span class="k">if</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">new</span><span class="p">:</span>
             <span class="c1"># Manually read lines in history file, starting at the index recorded (+1) when session started</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Read new lines </span><span class="si">%i</span><span class="s2"> and above from history file since the begining of this pybash session: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">new</span><span class="p">),</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Read new lines </span><span class="si">%i</span><span class="s2"> and above from history file since the beginning of this Pybash session: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hist_args</span><span class="o">.</span><span class="n">new</span><span class="p">),</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hist_line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_history_length</span><span class="p">:</span>
@@ -374,7 +374,7 @@
         <span class="c1"># g) Display history</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">history_args</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Display history&quot;</span><span class="p">,</span> <span class="s2">&quot;do_history&quot;</span><span class="p">)</span>
-            <span class="c1"># Add the rest of the pipeline if required, then inster the pybash_helper.show_history() function</span>
+            <span class="c1"># Add the rest of the pipeline if required, then instert the pybash_helper.show_history() function</span>
             <span class="c1">#   - this will print history + line numbers to stdout</span>
             <span class="c1">#   - the stdout can be redirected as required</span>
             <span class="k">if</span> <span class="n">remaining_cmd</span><span class="p">:</span>
@@ -420,7 +420,7 @@
     <span class="c1">#     which define how line is split to get the start of the word to be considered for completion</span>
 <div class="viewcode-block" id="pybash_cmd.autocomplete_path"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.autocomplete_path">[docs]</a>    <span class="k">def</span> <span class="nf">autocomplete_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">,</span> <span class="n">require_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">require_dir</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Get the surounding context for text</span>
+            <span class="c1"># Get the surrounding context for text</span>
             <span class="c1">#   e.g. if it is part of a larger file path</span>
             <span class="c1"># get all space characters that are before begidx</span>
             <span class="n">spaces</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">begidx</span><span class="p">)</span> <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">]</span>
@@ -480,13 +480,13 @@
 <div class="viewcode-block" id="pybash_cmd.complete_cd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.complete_cd">[docs]</a>    <span class="k">def</span> <span class="nf">complete_cd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocomplete_path</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">begidx</span><span class="p">,</span> <span class="n">endidx</span><span class="p">,</span> <span class="n">require_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
-    <span class="c1"># Override completenames() to check against pybash commands and shell commands</span>
+    <span class="c1"># Override completenames() to check against Pybash commands and shell commands</span>
 <div class="viewcode-block" id="pybash_cmd.completenames"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_cmd.pybash_cmd.completenames">[docs]</a>    <span class="k">def</span> <span class="nf">completenames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="o">*</span><span class="n">ignored</span><span class="p">):</span>
         <span class="c1"># Require at least one character be typed before completing names</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
 
-        <span class="c1"># Get matching pybash functions and shell commands</span>
+        <span class="c1"># Get matching Pybash functions and shell commands</span>
         <span class="n">pybash_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_names</span><span class="p">()</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;do_&#39;</span> <span class="o">+</span> <span class="n">text</span><span class="p">)]</span>
         <span class="n">shell_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_cmds</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">text</span><span class="p">)]</span>
         <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pybash_matches</span> <span class="o">+</span> <span class="n">shell_matches</span><span class="p">))</span>

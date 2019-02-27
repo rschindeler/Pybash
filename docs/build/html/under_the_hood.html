@@ -18,6 +18,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="TODO List" href="todos.html" />
     <link rel="prev" title="Examples" href="examples.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -29,6 +30,9 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="todos.html" title="TODO List"
+             accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="examples.html" title="Examples"
              accesskey="P">previous</a> |</li>
@@ -53,7 +57,7 @@ which parts by the shell.</p>
 </div></blockquote>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
-<p>The pybash interpreter is launched by creating an instance of the <code class="xref py py-class docutils literal notranslate"><span class="pre">pybash</span></code> class and calling its
+<p>The Pybash interpreter is launched by creating an instance of the <code class="xref py py-class docutils literal notranslate"><span class="pre">pybash</span></code> class and calling its
 cmdloop() method (see <a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd.cmdloop" title="(in Python v3.7)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cmd.Cmd.cmdloop()</span></code></a>). The <code class="xref py py-class docutils literal notranslate"><span class="pre">pybash</span></code> class extends the following:</p>
 <blockquote>
 <div><ul class="simple">
@@ -73,7 +77,7 @@ cmdloop() method (see <a class="reference external" href="https://docs.python.or
 <dd><ul class="first last">
 <li>Contains methods for executing shell and python commands</li>
 <li>Splits pipeline commands into their stages and manages the piping between them</li>
-<li>Handels redirects to files, python variables</li>
+<li>Handles redirects to files, python variables</li>
 </ul>
 </dd>
 </dl>
@@ -94,10 +98,10 @@ cmdloop() method (see <a class="reference external" href="https://docs.python.or
 </dd>
 </dl>
 </li>
-<li><p class="first"><a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">cmd.Cmd</span></code></a> checks for special pybash commands such as cd, history</p>
+<li><p class="first"><a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">cmd.Cmd</span></code></a> checks for special Pybash commands such as cd, history</p>
 </li>
 <li><p class="first">The <a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd.default" title="(in Python v3.7)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cmd.Cmd.default()</span></code></a> method is executed if no special commands were found, kicking off
-the main pybash command parsing method: <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a></p>
+the main Pybash command parsing method: <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a></p>
 </li>
 <li><p class="first"><a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a> splits the input line by ‘|’
 and kicks off the execution of each stage of the pipeline</p>
@@ -132,16 +136,16 @@ python variables is performed</li>
 </div>
 <div class="section" id="pipes-and-redirects">
 <h2>Pipes and Redirects<a class="headerlink" href="#pipes-and-redirects" title="Permalink to this headline">¶</a></h2>
-<p>Pybash handels piping and redirects using the std_pipe variable.  This is a 3-element tuple
+<p>Pybash handles piping and redirects using the std_pipe variable.  This is a 3-element tuple
 which contains the “location” of (stdin, stdout, stderr). The std_pipe is created by <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a>
 before executing the first stage of the pipeline, and is passed to each subsequent stage.</p>
 <p>The elements of std_pipe will resolve to either a file-like object (e.g. a file or <a class="reference external" href="https://docs.python.org/3/library/os.html#os.pipe" title="(in Python v3.7)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.pipe()</span></code></a>),
 <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>, or <em>/dev/null</em>. More details on std_pipe bellow.</p>
-<p>Redirects are perfomed by changing the “location” in std_pipe to either another file-like
-object or to reference the location of another element in std_pipe. This allows pybash to
+<p>Redirects are performed by changing the “location” in std_pipe to either another file-like
+object or to reference the location of another element in std_pipe. This allows Pybash to
 emulate bash-like redirects such as ‘cmd &gt; foo’ or ‘cmd &gt; foo 2&gt;&amp;1’.</p>
 <dl class="docutils">
-<dt>Redirects are parsed BEFORE knowning if it is a shell or python cmd</dt>
+<dt>Redirects are parsed BEFORE knowing if it is a shell or python cmd</dt>
 <dd><ul class="first last simple">
 <li>For this to work, <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd" title="pybash.command.pybash_runner.pybash_runner.run_shell_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_shell_cmd</span></code></a> and <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_python_cmd" title="pybash.command.pybash_runner.pybash_runner.run_python_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_python_cmd</span></code></a> must treat std_pipe the same way</li>
 <li><dl class="first docutils">
@@ -154,7 +158,7 @@ emulate bash-like redirects such as ‘cmd &gt; foo’ or ‘cmd &gt; foo 2&gt;&
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>Opening files occures before <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd" title="pybash.command.pybash_runner.pybash_runner.run_shell_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_shell_cmd</span></code></a> / <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_python_cmd" title="pybash.command.pybash_runner.pybash_runner.run_python_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_python_cmd</span></code></a></dt>
+<dt>Opening files occurs before <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd" title="pybash.command.pybash_runner.pybash_runner.run_shell_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_shell_cmd</span></code></a> / <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_python_cmd" title="pybash.command.pybash_runner.pybash_runner.run_python_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_python_cmd</span></code></a></dt>
 <dd><ul class="first last">
 <li>Files are opened the same way</li>
 <li>The read / write / append mode must be known, these commands are agnostic to this</li>
@@ -273,6 +277,9 @@ emulate bash-like redirects such as ‘cmd &gt; foo’ or ‘cmd &gt; foo 2&gt;&
   <h4>Previous topic</h4>
   <p class="topless"><a href="examples.html"
                         title="previous chapter">Examples</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="todos.html"
+                        title="next chapter">TODO List</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -305,6 +312,9 @@ emulate bash-like redirects such as ‘cmd &gt; foo’ or ‘cmd &gt; foo 2&gt;&
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="todos.html" title="TODO List"
+             >next</a> |</li>
         <li class="right" >
           <a href="examples.html" title="Examples"
              >previous</a> |</li>

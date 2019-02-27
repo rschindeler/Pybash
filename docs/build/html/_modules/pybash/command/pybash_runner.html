@@ -54,12 +54,12 @@
     <span class="c1"># Python 3</span>
     <span class="kn">from</span> <span class="nn">io</span> <span class="k">import</span> <span class="n">StringIO</span>
 
-<span class="c1"># Import pybash helper and utility functions</span>
+<span class="c1"># Import Pybash helper and utility functions</span>
 <span class="kn">import</span> <span class="nn">pybash.util.pybash_helper</span> <span class="k">as</span> <span class="nn">pybash_helper</span>
 <span class="kn">import</span> <span class="nn">pybash.util.pipe_util</span> <span class="k">as</span> <span class="nn">pipe_util</span>
 <span class="kn">import</span> <span class="nn">pybash.util.conversion_util</span> <span class="k">as</span> <span class="nn">conversion_util</span>
 
-<span class="c1"># Import pybash sub-classes</span>
+<span class="c1"># Import Pybash sub-classes</span>
 <span class="kn">from</span> <span class="nn">pybash.command.pybash_cmd</span> <span class="k">import</span> <span class="n">pybash_cmd</span>
 <span class="kn">from</span> <span class="nn">pybash.parsing.parser</span> <span class="k">import</span> <span class="n">parser</span> <span class="k">as</span> <span class="n">pybash_parser</span>
 <span class="kn">from</span> <span class="nn">pybash.util.std_io</span> <span class="k">import</span> <span class="n">pybash_io</span>
@@ -68,20 +68,20 @@
 <span class="c1">#class pybash_runner(pybash_cmd, pybash_parser):</span>
 <div class="viewcode-block" id="pybash_runner"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner">[docs]</a><span class="k">class</span> <span class="nc">pybash_runner</span><span class="p">(</span><span class="n">pybash_parser</span><span class="p">,</span> <span class="n">pybash_io</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Class responsible for running pybash commands </span>
+<span class="sd">    Class responsible for running Pybash commands </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
 <div class="viewcode-block" id="pybash_runner.run_shell_cmd"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd">[docs]</a>    <span class="k">def</span> <span class="nf">run_shell_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">std_pipe</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Function to execute a shell command in a subprocess, accepting stdin and returning stdout / stderr.</span>
-<span class="sd">        The three standard pipe varaibles can be passed individually or together using the std_pipe list. </span>
+<span class="sd">        The three standard pipe variables can be passed individually or together using the std_pipe list. </span>
 <span class="sd">        run_shell_cmd() is non-blocking, i.e. it will return before the subprocess finishes executing.</span>
 <span class="sd">        This allows for proper pipeline streaming.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            cmd (str): the shell command to execute (may contain bash-like parameters such as ${var}</span>
 <span class="sd">            std_pipe (list): list used to pass [std_in, stdout, stderr] if all three</span>
-<span class="sd">                are available / requried</span>
+<span class="sd">                are available / required</span>
 <span class="sd">            stdin: The standard input to pass to the shell command. This may be:</span>
 <span class="sd">                    1. File-like object (open python file or pipe), passed directly to subprocess.popen()</span>
 <span class="sd">                    2. Python variable that can be converted to a string with str(). This will written </span>
@@ -108,7 +108,7 @@
 <span class="sd">            (stdout, stderr, process)</span>
 <span class="sd">                1. if stdout / stderr file-like objects were passed to run_shell_cmd(), </span>
 <span class="sd">                   the same objects are returned</span>
-<span class="sd">                2. if subprocess.PIPE was passed to run_shell_cmd(), the read file handel of the </span>
+<span class="sd">                2. if subprocess.PIPE was passed to run_shell_cmd(), the read file handle of the </span>
 <span class="sd">                   newly-created os.pipe() is returned.</span>
 <span class="sd">                3. if none was passed to run_shell_cmd(), then none is returned.</span>
 <span class="sd">        </span>
@@ -120,7 +120,7 @@
             <span class="n">pipe_display</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">display_std_pipe</span><span class="p">([</span><span class="n">stdin</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanded std_pipe: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pipe_display</span><span class="p">,</span> <span class="s2">&quot;run_shell_cmd&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Combine cmd if list and perform parameter subsitution</span>
+        <span class="c1"># Combine cmd if list and perform parameter substitution</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
             <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_expansion</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
@@ -141,7 +141,7 @@
             <span class="n">write_stdin</span> <span class="o">=</span> <span class="kc">False</span>
        
         <span class="c1"># Possible values for stdout, stderr:</span>
-        <span class="c1">#    None: stdout / stderr will be writen to the terminal</span>
+        <span class="c1">#    None: stdout / stderr will be written to the terminal</span>
         <span class="c1">#    existing file object: stdout / stderr are redirected to file</span>
         <span class="c1">#    subprocess.PIPE: an os.pipe() is created</span>
         <span class="c1">#    tuple: this is a pipe, write the stdout[1]</span>
@@ -182,7 +182,7 @@
 <span class="sd">            3. stderr of python command</span>
 
 <span class="sd">        The python command is executed using exec(cmd, self.globals, self.local) in order to maintain </span>
-<span class="sd">        a separate &quot;varable space&quot; from the pybash program.</span>
+<span class="sd">        a separate &quot;variable space&quot; from the Pybash program.</span>
 
 <span class="sd">        Unlike run_shell_cmd(), run_python_cmd() is blocking. A future improvement could be to execute</span>
 <span class="sd">        the python command in a subprocess, and allow streaming data through std_pipe.</span>
@@ -190,7 +190,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            cmd (str): the shell command to execute </span>
 <span class="sd">            std_pipe (list): list used to pass [input_var, stdout, stderr] if all three</span>
-<span class="sd">                are available / requried</span>
+<span class="sd">                are available / required</span>
 <span class="sd">            input_var: The input variable to the python command, which acts similarily to stdin for</span>
 <span class="sd">                a shell command. This may be:</span>
 <span class="sd">                    1. File-like object (open python file or pipe), which will be read and converted </span>
@@ -233,7 +233,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># Expand the std_pipe, handel redirects (create deque objects instead of os.pipe()) </span>
+        <span class="c1"># Expand the std_pipe, handle redirects (create deque objects instead of os.pipe()) </span>
         <span class="n">input_var</span><span class="p">,</span><span class="n">stdout</span><span class="p">,</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">expand_std_pipe</span><span class="p">(</span><span class="n">std_pipe</span><span class="p">,</span> <span class="n">input_var</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Expanded std_pipe: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">input_var</span><span class="p">),</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">],</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
        
@@ -280,7 +280,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                 <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Sucessfuly compiled python: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd</span><span class="p">),</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Successfully compiled python: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd</span><span class="p">),</span> <span class="s2">&quot;run_python_cmd&quot;</span><span class="p">)</span>
 
         <span class="c1">####################################################################</span>
         <span class="c1"># Step 3: Execute the command</span>
@@ -352,7 +352,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s2">&quot;Unrecognized pipe type for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">pipe</span><span class="p">))</span>
         
-        <span class="c1"># Close any open file handels and return output</span>
+        <span class="c1"># Close any open file handles and return output</span>
         <span class="c1">#    - there is no subprocess for python commands</span>
         <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
@@ -376,7 +376,7 @@
 <span class="sd">                b) Expand any deque inputs using pipe_util.expand_deque_input()</span>
 <span class="sd">            2. Sub-in shell aliases if possible</span>
 <span class="sd">            3. Determine if the command should be executed as a shell command or python command</span>
-<span class="sd">                a) Commands including pybash helper functions are executed in python</span>
+<span class="sd">                a) Commands including Pybash helper functions are executed in python</span>
 <span class="sd">                b) Commands whose first word is a known shell command is executed in a shell subprocess</span>
 <span class="sd">                c) Any other commands are executed in python</span>
 
@@ -386,7 +386,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            cmd (str): the shell or python  command to execute</span>
 <span class="sd">            std_pipe (list): list used to pass [input_data, stdout, stderr] if all three</span>
-<span class="sd">                are available / requried</span>
+<span class="sd">                are available / required</span>
 <span class="sd">            input_data: Either the input_var for run_python_cmd() or the stdin for run_shell_cmd()</span>
 <span class="sd">            stdout: The destination of the standard output for python / shell commands</span>
 <span class="sd">            stdout: The destination of the standard error for python / shell commands</span>
@@ -440,7 +440,7 @@
 
         <span class="c1">############################################################################</span>
         <span class="c1"># Step 3) Check to see if this is a shell or python command and execute</span>
-        <span class="c1"># a) Check to see if this command contains known pybash helper functions</span>
+        <span class="c1"># a) Check to see if this command contains known Pybash helper functions</span>
         <span class="n">helper_functions</span> <span class="o">=</span> <span class="n">pybash_helper</span><span class="o">.</span><span class="n">function_match</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">helper_functions</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cmd_parts</span><span class="p">)):</span>
@@ -484,7 +484,7 @@
 <span class="sd">            * py_var = grep -nr str | head -n 5</span>
 <span class="sd">            * cat test.txt | grep myvar | cut -d &#39;=&#39; -f2 | py_function(@)</span>
 <span class="sd">        </span>
-<span class="sd">        This function breaks the pipeline into individual commands, and handels</span>
+<span class="sd">        This function breaks the pipeline into individual commands, and handles</span>
 <span class="sd">        the redirects, piping between commands, and assignment to python variables.</span>
 
 <span class="sd">        Args:</span>
@@ -503,7 +503,7 @@
         <span class="c1"># b) Get each part of the pipeline</span>
         <span class="n">pipeline</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pipeline_cmd</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="p">]</span>
 
-        <span class="c1"># c) Inintialize the &quot;location&quot; of [stdin, stdout, stderr] for the pipeline</span>
+        <span class="c1"># c) Initialize the &quot;location&quot; of [stdin, stdout, stderr] for the pipeline</span>
         <span class="c1">#    - For the first iteration, stdin = None</span>
         <span class="n">std_pipe</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="n">process</span> <span class="o">=</span> <span class="kc">None</span> 
@@ -557,12 +557,9 @@
         <span class="c1">#######################################################################</span>
         <span class="c1"># Step 3) Perform post-pipeline activities</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;done pipeline&quot;</span><span class="p">,</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
-        <span class="c1"># a) If there is a remaining process, wait for it to complete </span>
-        <span class="k">if</span> <span class="n">process</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Waiting for process to complete: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">process</span><span class="p">)</span>
-            <span class="n">process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         
-        <span class="c1"># b) Assign to output variable if required</span>
+        <span class="c1"># a) Assign to output variable if required</span>
+        <span class="c1">#   - some processes (e.g. &#39;find&#39;) will not exit if they have a stdout buffer</span>
         <span class="k">if</span> <span class="n">output_var</span><span class="p">:</span>
             <span class="c1"># Read stdout from std_pipe[1] (either a file-like object or deque)</span>
             <span class="n">stdout</span> <span class="o">=</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -571,7 +568,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading file </span><span class="si">%s</span><span class="s2"> and assigning to output variable </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="n">output_var</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
                     <span class="n">stdout_result</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">read_close_fd</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">write_error</span><span class="p">(</span><span class="s2">&quot;Could not process assignemnt, received closed file object&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_error</span><span class="p">(</span><span class="s2">&quot;Could not process assignment, received closed file object&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="n">deque</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Reading deque and assigning to output variable </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">output_var</span><span class="p">),</span> <span class="s2">&quot;run_pipeline&quot;</span><span class="p">)</span>
                 <span class="n">stdout_result</span> <span class="o">=</span> <span class="n">pipe_util</span><span class="o">.</span><span class="n">expand_deque_input</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
@@ -580,7 +577,12 @@
             <span class="c1"># so that it can be assigned </span>
             <span class="bp">self</span><span class="o">.</span><span class="n">locals</span><span class="p">[</span><span class="n">output_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">stdout_result</span> 
         
-        <span class="c1"># c) Read and close any open file handels / python variables for stdout and stderr  </span>
+        <span class="c1"># b) If there is a remaining process, wait for it to complete </span>
+        <span class="k">if</span> <span class="n">process</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_debug</span><span class="p">(</span><span class="s2">&quot;Waiting for process to complete: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">process</span><span class="p">)</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        
+        <span class="c1"># c) Read and close any open file handles / python variables for stdout and stderr  </span>
         <span class="n">print_fn</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">std_pipe</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -601,7 +603,7 @@
 
 <span class="sd">        The shell commands are found by executing:</span>
 <span class="sd">        </span>
-<span class="sd">        .. code-blick:: bash</span>
+<span class="sd">        .. code-block:: bash</span>
 <span class="sd">        </span>
 <span class="sd">            compgen -A function -ack</span>
 
@@ -635,7 +637,7 @@
     
 <div class="viewcode-block" id="pybash_runner.initialize_environment_variables"><a class="viewcode-back" href="../../../pybash.command.html#pybash.command.pybash_runner.pybash_runner.initialize_environment_variables">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_environment_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Function to load all environment varaibles from default shell</span>
+<span class="sd">        Function to load all environment variables from default shell</span>
 <span class="sd">        and store them in the self.locals dict. This allows them to be accessed</span>
 <span class="sd">        by python commands and shell commands (using ${var} notation)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -675,7 +677,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="n">alias_list_str</span><span class="p">)</span>
         <span class="n">alias_list</span> <span class="o">=</span> <span class="n">alias_list_str</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
-        <span class="c1"># Double check formating of each line then add to dict</span>
+        <span class="c1"># Double check formatting of each line then add to dict</span>
         <span class="n">shell_aliases</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">alias_list</span><span class="p">:</span>
             <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;alias (.*)=&#39;(.*)&#39;&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="p">)</span>

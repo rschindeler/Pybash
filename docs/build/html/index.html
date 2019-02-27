@@ -18,7 +18,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pybash package" href="pybash.html" /> 
+    <link rel="next" title="Pybash" href="modules.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -30,7 +30,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="pybash.html" title="pybash package"
+          <a href="modules.html" title="Pybash"
              accesskey="N">next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">Pybash  documentation</a> &#187;</li> 
       </ul>
@@ -45,33 +45,100 @@
 <h1>Welcome to Pybash!<a class="headerlink" href="#welcome-to-pybash" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<span class="target" id="module-app"></span><dl class="class">
-<dt id="app.pybash">
-<em class="property">class </em><code class="descclassname">app.</code><code class="descname">pybash</code><span class="sig-paren">(</span><em>completekey='tab'</em>, <em>stdin=None</em>, <em>stdout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app.html#pybash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.pybash" title="Permalink to this definition">¶</a></dt>
-<dd><p>Main pybash application class</p>
-<dl class="method">
-<dt id="app.pybash.default">
-<code class="descname">default</code><span class="sig-paren">(</span><em>pipeline_cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app.html#pybash.default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.pybash.default" title="Permalink to this definition">¶</a></dt>
-<dd><p>Override the cmd.Cmd function that must be declared to parse arbitrary commands</p>
-</dd></dl>
-
-</dd></dl>
-
 <p>Pybash is a command-line interpreter written in python. It’s goal is to allow the execution
 of any valid shell or python command - as well as combinations of the two!
-Shell-like pipes, file redirects, and pybash helper functions allow you to move back and
+Shell-like pipes, file redirects, and Pybash helper functions allow you to move back and
 forth between shell and python to make your life easy.</p>
+<div class="section" id="installation-and-usage">
+<h2>Installation and Usage<a class="headerlink" href="#installation-and-usage" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="python-2-x">
+<h3>Python 2.x<a class="headerlink" href="#python-2-x" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c1"># Pre-requisites</span>
+sudo apt install python-pip
+pip install pipenv
+
+<span class="c1"># Download the Pybash package</span>
+
+<span class="c1"># Setup virtual environment</span>
+<span class="nb">cd</span> path/to/Pybash/
+vim Pipfile
+<span class="c1"># Modify the python_version to your version (e.g. python_version = &quot;2.7&quot;)</span>
+
+<span class="c1"># Install dependencies</span>
+pipenv install
+
+<span class="c1"># Launch Pybash</span>
+pipenv run python app.py
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="python-3-x">
+<h3>Python 3.x<a class="headerlink" href="#python-3-x" title="Permalink to this headline">¶</a></h3>
+<p>See <a class="reference internal" href="todos.html#todos-label"><span class="std std-ref">TODO List</span></a></p>
+<div class="highlight-bash notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c1"># Pre-requisites</span>
+sudo apt install python-pip3
+pip install pipenv
+
+<span class="c1"># Download the Pybash package</span>
+
+<span class="c1"># Setup virtual environment</span>
+<span class="nb">cd</span> path/to/Pybash/
+vim Pipfile
+<span class="c1"># Modify the python_version to your version (e.g. python_version = &quot;3.6&quot;)</span>
+
+<span class="c1"># Install dependencies</span>
+pipenv install
+
+<span class="c1"># Launch Pybash</span>
+pipenv run python app.py
+</pre></div>
+</td></tr></table></div>
+</div>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="pybash.html">pybash package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pybash.command.html">pybash.command package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pybash.parsing.html">pybash.parsing package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pybash.util.html">pybash.util package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Pybash</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pybash.html">pybash package</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="under_the_hood.html">Under The Hood</a></li>
+<li class="toctree-l1"><a class="reference internal" href="todos.html">TODO List</a></li>
 </ul>
+</div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -92,14 +159,20 @@ forth between shell and python to make your life easy.</p>
   <h3><a href="#">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Welcome to Pybash!</a><ul>
+<li><a class="reference internal" href="#installation-and-usage">Installation and Usage</a><ul>
+<li><a class="reference internal" href="#python-2-x">Python 2.x</a></li>
+<li><a class="reference internal" href="#python-3-x">Python 3.x</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
   <h4>Next topic</h4>
-  <p class="topless"><a href="pybash.html"
-                        title="next chapter">pybash package</a></p>
+  <p class="topless"><a href="modules.html"
+                        title="next chapter">Pybash</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -133,7 +206,7 @@ forth between shell and python to make your life easy.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="pybash.html" title="pybash package"
+          <a href="modules.html" title="Pybash"
              >next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">Pybash  documentation</a> &#187;</li> 
       </ul>

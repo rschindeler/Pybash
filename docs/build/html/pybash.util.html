@@ -37,7 +37,8 @@
           <a href="pybash.parsing.html" title="pybash.parsing package"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="pybash.html" accesskey="U">pybash package</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="modules.html" >Pybash</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pybash.html" accesskey="U">pybash package</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -109,7 +110,7 @@ since readline.remove_history_item() is not working</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>line_number</strong> (<em>int</em>) – History line that will removed</li>
-<li><strong>initial_history_length</strong> (<em>int</em>) – The history length recorded at the start of the pybash session,
+<li><strong>initial_history_length</strong> (<em>int</em>) – The history length recorded at the start of the Pybash session,
 used for history management.  If the removed line was prior to the initial history length,
 then this needs to be adjusted.</li>
 </ul>
@@ -160,7 +161,7 @@ printed in debug messages in a short form (especially if some elements of std_pi
 <code class="descclassname">pybash.util.pipe_util.</code><code class="descname">expand_deque_input</code><span class="sig-paren">(</span><em>dq</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pipe_util.html#expand_deque_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pipe_util.expand_deque_input" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to take a deque (which acts as a pipe for python commands) and
 expand it to an input variable that is compatible with run_shell_cmd() / run_python_cmd().
-This attempts to replicate the behavour of shell commands such as ‘foo &gt; bar 2&gt;&amp;1’</p>
+This attempts to replicate the behaviour of shell commands such as ‘foo &gt; bar 2&gt;&amp;1’</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -189,7 +190,7 @@ For other types (or inconsistent types) just convert the deque into a list.</li>
 <code class="descclassname">pybash.util.pipe_util.</code><code class="descname">expand_std_pipe</code><span class="sig-paren">(</span><em>std_pipe</em>, <em>stdin</em>, <em>stdout</em>, <em>stderr</em>, <em>use_pipe=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pipe_util.html#expand_std_pipe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pipe_util.expand_std_pipe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to pick either the std_pipe + stdin/stdout/stderr variables, create pipes and
 process redirects.
-If std_pipe is defined, then it takes presidence over stdin/stdout/stderr. This allows
+If std_pipe is defined, then it takes precedence over stdin/stdout/stderr. This allows
 functions to accept either a tuple or individual arguments depending on the use case.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -209,7 +210,7 @@ use_pipe (bool):</p>
 <li>If True: an os.pipe() is created and opened, (read,write) file-like objects
 are returned as a tuple</li>
 <li>If False: a collections.deque object is created, which is used instead of pipes
-for python comands</li>
+for python commands</li>
 </ol>
 </div></blockquote>
 </li>
@@ -284,9 +285,9 @@ with an open file-like object (with the mode specified by mode)</li>
 <dl class="function">
 <dt id="pybash.util.pipe_util.open_pipe">
 <code class="descclassname">pybash.util.pipe_util.</code><code class="descname">open_pipe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pipe_util.html#open_pipe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pipe_util.open_pipe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function that creates an os.pipe and opens the read / write file handels. This mimicks
+<dd><p>Function that creates an os.pipe and opens the read / write file handles. This mimics
 what subprocess.Popen() does under-the-hood, but in order to support redirects, it is
-usefull to have the pipe opened before calling subprocess.Popen().</p>
+useful to have the pipe opened before calling subprocess.Popen().</p>
 <p>Ref: <a class="reference external" href="https://github.com/python/cpython/blob/master/Lib/subprocess.py">https://github.com/python/cpython/blob/master/Lib/subprocess.py</a></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -325,15 +326,15 @@ usefull to have the pipe opened before calling subprocess.Popen().</p>
 </div>
 <div class="section" id="module-pybash.util.pybash_helper">
 <span id="pybash-util-pybash-helper-module"></span><h2>pybash.util.pybash_helper module<a class="headerlink" href="#module-pybash.util.pybash_helper" title="Permalink to this headline">¶</a></h2>
-<p>This file contains helper functions for the pybash interpreter
-These functions can be used in a pipeline to facilitagte moving between bash and python
+<p>This file contains helper functions for the Pybash interpreter
+These functions can be used in a pipeline to facilitate moving between bash and python
 e.g. “find . | to_list” will get the stdout of “find .” and convert each line to an element in a list</p>
 <p>This file will be imported within the interpreters “scope” so that the functions are accessible
 when using exec(‘…’, self.globals, self.locals)</p>
 <dl class="function">
 <dt id="pybash.util.pybash_helper.from_file">
 <code class="descclassname">pybash.util.pybash_helper.</code><code class="descname">from_file</code><span class="sig-paren">(</span><em>f_name</em>, <em>mode='r'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pybash_helper.html#from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pybash_helper.from_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to read a file and return the contents as a strting</p>
+<dd><p>Function to read a file and return the contents as a string</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -351,12 +352,12 @@ when using exec(‘…’, self.globals, self.locals)</p>
 <dl class="function">
 <dt id="pybash.util.pybash_helper.function_match">
 <code class="descclassname">pybash.util.pybash_helper.</code><code class="descname">function_match</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pybash_helper.html#function_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pybash_helper.function_match" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function used by pybash to determine if a command is a pybash_helper function</p>
+<dd><p>Function used by Pybash to determine if a command is a pybash_helper function</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>str</em>) – Command string which may contain pybash helper functions</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>str</em>) – Command string which may contain Pybash helper functions</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of functions found in input string</td>
 </tr>
@@ -369,7 +370,7 @@ when using exec(‘…’, self.globals, self.locals)</p>
 <dl class="function">
 <dt id="pybash.util.pybash_helper.python_keyword_match">
 <code class="descclassname">pybash.util.pybash_helper.</code><code class="descname">python_keyword_match</code><span class="sig-paren">(</span><em>c</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pybash_helper.html#python_keyword_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pybash_helper.python_keyword_match" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function used by pybash to check if a command is a python keyword</p>
+<dd><p>Function used by Pybash to check if a command is a python keyword</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -385,7 +386,7 @@ when using exec(‘…’, self.globals, self.locals)</p>
 <dl class="function">
 <dt id="pybash.util.pybash_helper.show_history">
 <code class="descclassname">pybash.util.pybash_helper.</code><code class="descname">show_history</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pybash_helper.html#show_history"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pybash_helper.show_history" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to show the pybash histroy. This function is invoked by the pybash_cmd.do_history(),
+<dd><p>Function to show the Pybash history. This function is invoked by the pybash_cmd.do_history(),
 allowing the history to be displayed when the user enters the command: ‘history’</p>
 </dd></dl>
 
@@ -448,7 +449,7 @@ allowing the history to be displayed when the user enters the command: ‘histor
 <dl class="function">
 <dt id="pybash.util.pybash_helper.to_str">
 <code class="descclassname">pybash.util.pybash_helper.</code><code class="descname">to_str</code><span class="sig-paren">(</span><em>v</em>, <em>single_line=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pybash/util/pybash_helper.html#to_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pybash.util.pybash_helper.to_str" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to convert input variable to string, using special formating for dicts and lists.
+<dd><p>Function to convert input variable to string, using special formatting for dicts and lists.
 TODO: Add support for json</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -630,7 +631,8 @@ TODO: Add support for json</p>
           <a href="pybash.parsing.html" title="pybash.parsing package"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Pybash  documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="pybash.html" >pybash package</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="modules.html" >Pybash</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pybash.html" >pybash package</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
