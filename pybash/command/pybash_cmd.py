@@ -18,14 +18,14 @@ class pybash_cmd(Cmd, pybash_io):
        - extends pybash_io for stdout / stderr printing functions
     
     Attributes:
-        banner (str): the banner text printed when starting interactive pybash shell
+        banner (str): the banner text printed when starting interactive Pybash shell
         prompt_separator (str): Text printed in the command-line prompt after the file path 
         user_home (str): The home directory of the user, default to '~'
-        history_file (str): Path of the pybash history file
-        cmd_flags (dict): Dictionary that stores pybash configuration values such as:
+        history_file (str): Path of the Pybash history file
+        cmd_flags (dict): Dictionary that stores Pybash configuration values such as:
             1. debug: If True, then debug statements are printed
             2. shell: UNIX shell used to execute shell commands, defaults to /bin/bash
-            3. max_autocomplete: limits the number of items displayed when autocompleting paths
+            3. max_autocomplete: limits the number of items displayed when auto-completing paths
                and names before prompting user if they want to display all possibilities
         cmd_flag_types (dict): Used to enforce valid variable types for the values stored in
             cmd_flags (for example, debug must be a bool variable). The special 'file_exists' str
@@ -35,19 +35,19 @@ class pybash_cmd(Cmd, pybash_io):
             is itself a dict which controls the alias behaviour for different pipeline stages:
             Format: {'alias_cmd': {-1: <val for last pipeline stage>, 0: <val for other stages>}}
             Example: {'ll':    {0: 'ls -lrt', -1: 'ls -lrt --color=auto'}}
-            If the '0' or '-1' value is ommited, the alias is not applied for those stages.
+            If the '0' or '-1' value is omitted, the alias is not applied for those stages.
     """
     
     
     ####################################################################################
     # DEFINITIONS
     ####################################################################################
-    banner = "Welcome to pybash! A pythonic way to use your favourite shell"
+    banner = "Welcome to Pybash! A pythonic way to use your favourite shell"
     prompt_separator = "% "
     user_home = os.path.expanduser("~")
     history_file = os.path.join(user_home, ".pybash")
     
-    # Dict to store flags used by the pybash interpreter
+    # Dict to store flags used by the Pybash interpreter
     cmd_flags = {'debug': True, 
                  'shell': '/bin/bash', 
                  'shell_source': os.path.join(user_home, '.bashrc'), 
@@ -76,7 +76,7 @@ class pybash_cmd(Cmd, pybash_io):
         Override of the cmd.Cmd function which is called when the terminal prompt loop is 
         first entered. Performs the following:
             1. Initialize the interpreter's local and global dicts in order to maintain a separate 
-               "scope" from the pybash program. Import the pybash_helper module so that it is 
+               "scope" from the Pybash program. Import the pybash_helper module so that it is 
                available when executing commands.
             2. Initialize the list of commands and environment variables available in the user's 
                default shell.
@@ -224,7 +224,7 @@ class pybash_cmd(Cmd, pybash_io):
     def do_sudo(self, line):
         """
         Override shell sudo command
-          - if 'sudo -i' is used, launch pybash as root
+          - if 'sudo -i' is used, launch Pybash as root
           - else, run shell sudo command
         """
         if line.split()[0] == '-i':
@@ -239,11 +239,11 @@ class pybash_cmd(Cmd, pybash_io):
     def do_history(self, line):
         """
         Emulates the bash history command. Usage:
-            * -c / --clear: Clears the pybash history
+            * -c / --clear: Clears the Pybash history
             * -d / --delete (int) delete a specific history line
             * -a / --append [file] append all new history lines from this session to history file, 
               or to file specified
-            * -n / --new [file] read lines from history file created after pybash launched, 
+            * -n / --new [file] read lines from history file created after Pybash launched, 
               or from file specified 
 
         The line will be parsed using an argparse.ArgumentParser. If no history arguments are 
@@ -312,7 +312,7 @@ class pybash_cmd(Cmd, pybash_io):
         # d) Perform history new
         if hist_args.new:
             # Manually read lines in history file, starting at the index recorded (+1) when session started
-            self.write_debug("Read new lines %i and above from history file since the begining of this pybash session: %s" % (self.initial_history_length + 1, hist_args.new), "do_history")
+            self.write_debug("Read new lines %i and above from history file since the beginning of this Pybash session: %s" % (self.initial_history_length + 1, hist_args.new), "do_history")
             with open(self.history_file, 'r') as f:
                 for i, hist_line in enumerate(f):
                     if i > self.initial_history_length:
@@ -333,7 +333,7 @@ class pybash_cmd(Cmd, pybash_io):
         # g) Display history
         if len(history_args.strip()) == 0:
             self.write_debug("Display history", "do_history")
-            # Add the rest of the pipeline if required, then inster the pybash_helper.show_history() function
+            # Add the rest of the pipeline if required, then instert the pybash_helper.show_history() function
             #   - this will print history + line numbers to stdout
             #   - the stdout can be redirected as required
             if remaining_cmd:
@@ -379,7 +379,7 @@ class pybash_cmd(Cmd, pybash_io):
     #     which define how line is split to get the start of the word to be considered for completion
     def autocomplete_path(self, text, line, begidx, endidx, require_file=False, require_dir=False):
         try:
-            # Get the surounding context for text
+            # Get the surrounding context for text
             #   e.g. if it is part of a larger file path
             # get all space characters that are before begidx
             spaces = [i for i in range(begidx) if line[i] == ' ']
@@ -439,13 +439,13 @@ class pybash_cmd(Cmd, pybash_io):
     def complete_cd(self, text, line, begidx, endidx):
         return self.autocomplete_path(text, line, begidx, endidx, require_dir=True)
 
-    # Override completenames() to check against pybash commands and shell commands
+    # Override completenames() to check against Pybash commands and shell commands
     def completenames(self, text, *ignored):
         # Require at least one character be typed before completing names
         if not text:
             return []
 
-        # Get matching pybash functions and shell commands
+        # Get matching Pybash functions and shell commands
         pybash_matches = [a[3:] for a in self.get_names() if a.startswith('do_' + text)]
         shell_matches = [a for a in self.shell_cmds if a.startswith(text)]
         matches = list(set(pybash_matches + shell_matches))

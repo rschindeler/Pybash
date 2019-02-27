@@ -1,6 +1,6 @@
 """
-This file contains helper functions for the pybash interpreter
-These functions can be used in a pipeline to facilitagte moving between bash and python
+This file contains helper functions for the Pybash interpreter
+These functions can be used in a pipeline to facilitate moving between bash and python
 e.g. "find . | to_list" will get the stdout of "find ." and convert each line to an element in a list
 
 This file will be imported within the interpreters "scope" so that the functions are accessible
@@ -15,10 +15,10 @@ import keyword
 
 def function_match(s):
     """
-    Function used by pybash to determine if a command is a pybash_helper function
+    Function used by Pybash to determine if a command is a pybash_helper function
     
     Args:
-        s (str): Command string which may contain pybash helper functions
+        s (str): Command string which may contain Pybash helper functions
     Returns:
         list: List of functions found in input string
     """
@@ -32,7 +32,7 @@ def function_match(s):
 
 def python_keyword_match(c):
     """
-    Function used by pybash to check if a command is a python keyword
+    Function used by Pybash to check if a command is a python keyword
     
     Args:
         c (str): Command which is matched against python keywords
@@ -74,7 +74,7 @@ def to_dict(s):
 
 def to_str(v, single_line=False):
     """
-    Function to convert input variable to string, using special formating for dicts and lists.
+    Function to convert input variable to string, using special formatting for dicts and lists.
     TODO: Add support for json
     
     Args:
@@ -129,7 +129,7 @@ def to_file(f_name, d, mode='w'):
 
 def from_file(f_name, mode='r'):
     """
-    Function to read a file and return the contents as a strting
+    Function to read a file and return the contents as a string
     
     Args: 
         f_name (str): File path to read from
@@ -146,7 +146,7 @@ def from_file(f_name, mode='r'):
 
 def show_history():
     """
-    Function to show the pybash histroy. This function is invoked by the pybash_cmd.do_history(),
+    Function to show the Pybash history. This function is invoked by the pybash_cmd.do_history(),
     allowing the history to be displayed when the user enters the command: 'history'
     """
     

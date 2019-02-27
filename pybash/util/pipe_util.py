@@ -25,7 +25,7 @@ def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
     """
     Function to pick either the std_pipe + stdin/stdout/stderr variables, create pipes and 
     process redirects.
-    If std_pipe is defined, then it takes presidence over stdin/stdout/stderr. This allows
+    If std_pipe is defined, then it takes precedence over stdin/stdout/stderr. This allows
     functions to accept either a tuple or individual arguments depending on the use case.
 
     Args:
@@ -37,7 +37,7 @@ def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
                 1. If True: an os.pipe() is created and opened, (read,write) file-like objects
                    are returned as a tuple
                 2. If False: a collections.deque object is created, which is used instead of pipes 
-                   for python comands
+                   for python commands
 
     Special cases for stdin, stdout, stderr:
     1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value 
@@ -84,9 +84,9 @@ def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
 
 def open_pipe():
     """
-    Function that creates an os.pipe and opens the read / write file handels. This mimicks
+    Function that creates an os.pipe and opens the read / write file handles. This mimics
     what subprocess.Popen() does under-the-hood, but in order to support redirects, it is 
-    usefull to have the pipe opened before calling subprocess.Popen().
+    useful to have the pipe opened before calling subprocess.Popen().
 
     Ref: https://github.com/python/cpython/blob/master/Lib/subprocess.py
 
@@ -129,7 +129,7 @@ def fd_assign(file_d_index, mode, val, std_pipe):
         val = open(val, mode)
     
     # If val is a file-like object, integer, subprocess.PIPE or None, the redirect will be
-    # handeled by run_shell_cmd() / run_python_cmd()
+    # handled by run_shell_cmd() / run_python_cmd()
 
     # Assign the new value to std_pipe
     std_pipe[file_d_index] = val
@@ -163,7 +163,7 @@ def expand_deque_input(dq):
     """
     Function to take a deque (which acts as a pipe for python commands) and 
     expand it to an input variable that is compatible with run_shell_cmd() / run_python_cmd().
-    This attempts to replicate the behavour of shell commands such as 'foo > bar 2>&1'
+    This attempts to replicate the behaviour of shell commands such as 'foo > bar 2>&1'
     
     Args:
         dq (collections.deque): input deque to be converted
@@ -183,7 +183,7 @@ def expand_deque_input(dq):
     elif len(dq) == 1:
         return dq.pop()
     else:
-        # Get the first element and enfoce same type for all input variables
+        # Get the first element and enforce same type for all input variables
         new_input = dq.pop()
         input_type = type(new_input)
         # If these are not a string, dict or list, convert deque to list
@@ -192,7 +192,7 @@ def expand_deque_input(dq):
         # If they are not all the same type, convert deque to list
         elif len([x for x in dq if (not type(x) == input_type)]) > 0:
             new_input = [new_input] + list(dq)
-        # If they are consisten types, combine
+        # If they are consistent types, combine
         else:
             while len(dq) > 0:
                 if input_type in [str, list]:

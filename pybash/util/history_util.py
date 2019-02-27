@@ -9,7 +9,7 @@ def remove_history_item(line_number, initial_history_length=None):
 
     Args:
         line_number (int): History line that will removed
-        initial_history_length (int): The history length recorded at the start of the pybash session,
+        initial_history_length (int): The history length recorded at the start of the Pybash session,
             used for history management.  If the removed line was prior to the initial history length, 
             then this needs to be adjusted.
     Returns:

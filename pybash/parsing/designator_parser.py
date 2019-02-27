@@ -4,12 +4,23 @@ import readline
 from pybash.util.std_io import pybash_io
 import pybash.util.history_util as history_util
 
-# Function to get the index of the last sequential character matching a regex,
-# optionally starting at a specific index
-# For exmaple, find the last numeric character in a string:
-#   last_matching_char('[0-9]', 'asdf1234qwer', 4)
-#   would match '4' at index 7
 def last_matching_char(r, s, i=0):
+    """
+    Function to get the index of the last sequential character matching a regex,
+    optionally starting at a specific index
+    For example, find the last numeric character in a string:
+
+    ::
+        last_matching_char('[0-9]', 'asdf1234qwer', 4)
+      
+    would match '4' at index 7
+
+    Args:
+        r (str): regex which matches a single character
+        s (str): string representing the character sequence to search in
+        i (int): Optional (default = 0) start index to begin searching
+
+    """
     k = i
     while k < len(s):
         if not re.match(r, s[k]):
@@ -17,12 +28,23 @@ def last_matching_char(r, s, i=0):
         k += 1
     return k - 1
 
-# Class to manage parsing bash-like event and word designators
 class designator_parser(pybash_io):
-    
-    # Function to expand bash-like event and word designators such as !!:3, !$ !!
+    """
+    Class to manage parsing bash-like event and word designators
+    """
+
     # REF: https://www.gnu.org/software/bash/manual/bashref.html#Event-Designators
     def expand_designators(self, cmd):
+        """
+        # Function to expand bash-like event and word designators such as !!:3, !$ !!
+
+        Args:
+            cmd (str): Command string which may contain bash-like event and word designators
+
+        Returns:
+            (str): Modified command string with all event and word designators expanded    
+        """
+
         # If any expansion is done, replace history line at the end
         expansion_performed = False
 
@@ -30,7 +52,7 @@ class designator_parser(pybash_io):
         parse_start_index = 0
         while True:
             ###########################################################################
-            # Step 1) Find the begining of a history event designator 
+            # Step 1) Find the beginning of a history event designator 
             # Starting at parse_start_index, find the first index of '!' in cmd
             loc = -1
             for i in range(parse_start_index, len(cmd)):
@@ -73,7 +95,7 @@ class designator_parser(pybash_io):
             ###########################################################################
             # Step 4) Parse word designators
             # Check for a ':' after the event designator
-            #  - Note: The parse_word_designator may have already been set if using a shortform
+            #  - Note: The parse_word_designator may have already been set if using a short form
             if next_loc < len(cmd)-1 and cmd[next_loc] == ':':
                 parse_word_designator = True
                 next_loc += 1
@@ -94,7 +116,7 @@ class designator_parser(pybash_io):
         if expansion_performed:
             # Replace most recent line in history
             last_line = readline.get_current_history_length()
-            self.write_debug("Repalcing most recent history line %i" % last_line)
+            self.write_debug("Replacing most recent history line %i" % last_line)
             history_util.remove_history_item(last_line)
             readline.add_history(cmd)
             # Print the resulting cmd to stdout (bash does this!)
@@ -104,16 +126,25 @@ class designator_parser(pybash_io):
         return cmd
         
 
-    # Function to perform event designator expansion
-    # Input:
-    #   - cmd: the command being parsed
-    #   - loc: the current character index to parsethe event designator
-    # Output:
-    #   - history_line: the line selected from the history to be substitued
-    #   - next_loc: location of the next character in cmd to be parsed
-    #   - parse_word_designator: flag that is set if a short-form word designator is detected
     def expand_event_designator(self, cmd, loc):
-        # Set this flag to False by default - will be set tyo True if short-form word designator is found
+        """
+        Function to perform event designator expansion
+        
+        Args:
+          - cmd: the command being parsed
+          - loc: the current character index to parse the event designator
+
+        Returns:
+            (tuple) (history_line, next_loc, parse_word_designator)
+         
+        Return values:
+          - history_line: the line selected from the history to be substituted
+          - next_loc: location of the next character in cmd to be parsed
+          - parse_word_designator: flag that is set if a short-form word designator is detected
+
+        """
+        
+        # Set this flag to False by default - will be set to True if short-form word designator is found
         parse_word_designator = False
         # Set to None for now - if it not set by any of the conditions bellow, this designator will be skipped
         history_line = None
@@ -149,7 +180,7 @@ class designator_parser(pybash_io):
             next_loc = loc+2
             history_line = -1
             parse_word_designator = True
-            self.write_debug("Expanding 'previous command' event designator with shortform word designator", "expand_designators")
+            self.write_debug("Expanding 'previous command' event designator with short form word designator", "expand_designators")
         # Check for reference to history line starting with a string
         #   e.g. !pattern
         elif re.match(alph_re, cmd[loc+1]):
@@ -194,18 +225,25 @@ class designator_parser(pybash_io):
         
         return history_line, next_loc, parse_word_designator
 
-    # Function to perform word designator expansion
-    # Inputs: 
-    #   cmd: the command that is being parsed
-    #   next_loc: the next character index to be parsed (after event designator has been parsed)
-    #   replace_val: the line of text that was generated by the event designator
-    #
-    # Output:
-    #    next_loc: updated character index after parsing word designator
-    #    replace_val: one or more words selected from the input replace_val
-    #
-    # For example: !!, !$, !!:4-5
     def expand_word_designator(self, cmd, next_loc, replace_val): 
+        """
+        Function to perform word designator expansion
+
+        Args: 
+            cmd: the command that is being parsed
+            next_loc: the next character index to be parsed (after event designator has been parsed)
+            replace_val: the line of text that was generated by the event designator
+
+        Returns:
+            tuple: (next_loc, replace_val)
+
+        Return values:
+            - next_loc: updated character index after parsing word designator
+            - replace_val: one or more words selected from the input replace_val
+        
+        For example: !!, !$, !!:4-5
+        """
+
         # Check for "entire command"
         if cmd[next_loc] == '!':
             # no change

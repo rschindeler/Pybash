@@ -2,7 +2,7 @@ import re
 
 import pybash.util.pipe_util as pipe_util
 
-# Some parsing functions are handeled by subclasses 
+# Some parsing functions are handled by subclasses 
 from pybash.parsing.designator_parser import designator_parser
 from pybash.parsing.parameter_parser import parameter_parser
 
@@ -26,7 +26,7 @@ class parser(designator_parser, parameter_parser):
         
         Args:
             cmd (str): Command which may contain 0 or more redirect statements
-            std_pipe (tuple): pybash std_pipe variable containing "location" of stdin/stdout/stderr
+            std_pipe (tuple): Pybash std_pipe variable containing "location" of stdin/stdout/stderr
 
         Returns:
             (str) Command with all redirect text removed

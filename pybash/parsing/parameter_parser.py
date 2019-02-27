@@ -3,16 +3,26 @@ import re
 from pybash.util.std_io import pybash_io
 import pybash.util.pybash_helper
 
-# Class to handle the parsing and expansion of bash-like parameters (e.g. ${var:3})
 class parameter_parser(pybash_io):
+    """
+    Class to handle the parsing and expansion of bash-like parameters (e.g. ${var:3})
+    """
 
-    # Function to perform bash-like parameter expansion
     shell_param_regex = '\$([a-zA-Z0-9_]+)'
     shell_param_brace_regex = '\${([^}^$]+)}'
-    # Function to perform bash-like parameter expansion 
     # Based on: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
     def parameter_expansion(self, cmd):
-        # Loop untill all parameter expansions have been processed
+        """
+        Function to perform bash-like parameter expansion 
+
+        Args:
+            cmd (str): Command string which may contain bash-like parameters
+
+        Returns:
+            (str): Modified command string with expanded parameters
+
+        """
+        # Loop until all parameter expansions have been processed
         expansion_limit = 100
         expansion_counter = 0
         while True:
@@ -28,7 +38,7 @@ class parameter_parser(pybash_io):
                 # First try parameter expansions in curly braces
                 if param_brace_match:
                     start, end = param_brace_match.start(), param_brace_match.end()
-                    # Get the full paramter to expand
+                    # Get the full parameter to expand
                     param = param_brace_match.groups()[0]
                     self.write_debug("Performing brace parameter expansion for param %s" % param, "parameter_expansion")
                     
@@ -49,14 +59,14 @@ class parameter_parser(pybash_io):
                     elif param.startswith('#'):
                         out = self.length_expansion(param)
                     else:
-                        # Default case: ${parameter} or ${paramer[index]}
+                        # Default case: ${parameter} or ${paramter[index]}
                         var = self.list_var_expansion(param)
                         if var:
                             out = pybash_helper.to_str(var, single_line=True)
                         else:
                             out = ""
                         
-                # Second try simple paramter expansion
+                # Second try simple parameter expansion
                 if param_match:
                     start, end = param_match.start(), param_match.end()
                     param = param_match.groups()[0]
@@ -74,10 +84,10 @@ class parameter_parser(pybash_io):
                         out = ""
                 
                 # Perform substitution
-                # TODO: this will overrite any environemnt variables
+                # TODO: this will overwrite any environment variables
                 cmd = cmd[0:start] + out + cmd[end:]
             except Exception as e:
-               self.print_error('Invalid prarameter expansion: %s' % cmd)
+               self.print_error('Invalid parameter expansion: %s' % cmd)
                self.stderr_write(e)
                self.stderr_write(traceback.format_exc())
                break
@@ -213,8 +223,8 @@ class parameter_parser(pybash_io):
         # otherwise: This is a Substring Expansion
         #       ${parameter:offset} / ${parameter:offset:length}
         else:
-            # - expands to up to "length" characters of the value of "parameter" starting at the caracter specified by "offset"
-            raise ValueError ("Unknown subsitition operation %s" % ":".join(param_parts))
+            # - expands to up to "length" characters of the value of "parameter" starting at the character specified by "offset"
+            raise ValueError ("Unknown substitution operation %s" % ":".join(param_parts))
 
     def substring_expansion(self, param_parts):
         self.write_debug("Performing substring expansion '%s'" % param_parts, "substring_expansion")
@@ -254,14 +264,14 @@ class parameter_parser(pybash_io):
     assignment_regex = '^([A-Za-z0-9_]+)[ ]*[^\>\<=]*=[ ]*([^=].*)$'
     def get_assignment(self, cmd):
         """
-        Function to parse assignemnt in a command, returns output variable and cmd to be evaluated
+        Function to parse assignment in a command, returns output variable and cmd to be evaluated
         
         Args:
             cmd (str): Command that may be in the form 'var = expression' where 'var' is the output 
                 variable and 'expression' is a valid pybash expression
         Returns:
             tuple: (expression, var) Separated input command if an assignment was detected.  If no 
-                assignemnt was detected, then expression = cmd and var = :const:`None`
+                assignment was detected, then expression = cmd and var = :const:`None`
 
         """
         self.write_debug("Checking command for assignment: %s" % cmd)
