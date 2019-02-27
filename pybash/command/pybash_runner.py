@@ -562,7 +562,7 @@ class pybash_runner(pybash_parser, pybash_io):
 
         The shell commands are found by executing:
         
-        .. code-blick:: bash
+        .. code-block:: bash
         
             compgen -A function -ack
 
