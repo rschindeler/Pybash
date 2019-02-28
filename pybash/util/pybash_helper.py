@@ -89,7 +89,7 @@ def to_str(v, single_line=False):
             3. Other variable types: Converted to string using str()
             
     Returns:
-        String representation of input variable
+        (str): String representation of input variable
 
     """
     

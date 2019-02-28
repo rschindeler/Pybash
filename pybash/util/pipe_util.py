@@ -40,12 +40,11 @@ def expand_std_pipe(std_pipe, stdin, stdout, stderr, use_pipe=False):
                    for python commands
 
     Special cases for stdin, stdout, stderr:
-    1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value 
-       of use_pipe.
-    2. Positive int: this denotes a redirect. 
-       If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is >= 0, then, std_pipe[i] is redirected
-       to the pipe or deque located at std_pipe[std_pipe[i]].
-       For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.
+        1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value of use_pipe).
+        2. Positive int: this denotes a redirect. 
+           If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is >= 0, then, std_pipe[i] is redirected
+           to the pipe or deque located at std_pipe[std_pipe[i]].
+           For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.
 
     Returns:
         tuple: Returns (stdin,stdout,stderr) which are all either file-like objects (open file, pipes), 
