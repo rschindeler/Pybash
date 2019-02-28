@@ -48,7 +48,7 @@ class pybash_cmd(Cmd, pybash_io):
     history_file = os.path.join(user_home, ".pybash")
     
     # Dict to store flags used by the Pybash interpreter
-    cmd_flags = {'debug': True, 
+    cmd_flags = {'debug': False, 
                  'shell': '/bin/bash', 
                  'shell_source': os.path.join(user_home, '.bashrc'), 
                  'max_autocomplete': 100}
