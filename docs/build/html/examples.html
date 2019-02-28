@@ -84,7 +84,7 @@ helper functions to ease the transition.</p>
 dict_list = find . -name &quot;\*.yaml&quot; | [to_dict(from_file(f)) for f in to_list(@)] | [d for d in @ if &#39;test_key&#39; in d]
 </pre></div>
 </td></tr></table></div>
-<p>See <a href="#id1"><span class="problematic" id="id2">:module:`pybash.util.pybash_helper`</span></a> for details on the available helper functions.</p>
+<p>See <a class="reference internal" href="pybash.util.html#module-pybash.util.pybash_helper" title="pybash.util.pybash_helper"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pybash.util.pybash_helper</span></code></a> for details on the available helper functions.</p>
 <p>When piping to a python stage, ‘&#64;’ is interpreted as the input variable from
 the previous stage. The following examples shows how this is done:</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1

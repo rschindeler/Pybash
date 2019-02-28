@@ -13,6 +13,7 @@ Under The Hood
 
 Pybash works by determining which parts of a command should be executed in python, and 
 which parts by the shell. 
+
     * Python commands are executed using the built-in :func:`exec`
     * Shell commands are executed using :class:`subprocess.Popen`
 
@@ -42,8 +43,7 @@ Each command (which may contain multiple pipeline stages) is evaluated as follow
     2. :class:`cmd.Cmd` checks for special Pybash commands such as cd, history
     3. The :meth:`cmd.Cmd.default` method is executed if no special commands were found, kicking off
        the main Pybash command parsing method: |run_pipeline|
-    4. |run_pipeline| splits the input line by '|' 
-       and kicks off the execution of each stage of the pipeline
+    4. |run_pipeline| splits the input line by '|' and kicks off the execution of each stage of the pipeline
         - The standard pipe is initiated and managed by this method
         - Redirect parsing is done for each stage
     5. Each stage of the pipeline is processed and executed using the |run_cmd| method

@@ -89,32 +89,30 @@ cmdloop() method (see <a class="reference external" href="https://docs.python.or
 <h2>Command Execution Flow<a class="headerlink" href="#command-execution-flow" title="Permalink to this headline">¶</a></h2>
 <p>Each command (which may contain multiple pipeline stages) is evaluated as follows:</p>
 <blockquote>
-<div><ol class="arabic">
+<div><ol class="arabic simple">
 <li><dl class="first docutils">
 <dt>The <a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd.precmd" title="(in Python v3.7)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cmd.Cmd.precmd()</span></code></a> method is executed which will expand bash-like designators</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>For example: !$, !!</li>
 </ul>
 </dd>
 </dl>
 </li>
-<li><p class="first"><a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">cmd.Cmd</span></code></a> checks for special Pybash commands such as cd, history</p>
-</li>
-<li><p class="first">The <a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd.default" title="(in Python v3.7)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cmd.Cmd.default()</span></code></a> method is executed if no special commands were found, kicking off
-the main Pybash command parsing method: <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a></p>
-</li>
-<li><p class="first"><a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a> splits the input line by ‘|’
-and kicks off the execution of each stage of the pipeline</p>
-<blockquote>
-<div><ul class="simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">cmd.Cmd</span></code></a> checks for special Pybash commands such as cd, history</li>
+<li>The <a class="reference external" href="https://docs.python.org/3/library/cmd.html#cmd.Cmd.default" title="(in Python v3.7)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cmd.Cmd.default()</span></code></a> method is executed if no special commands were found, kicking off
+the main Pybash command parsing method: <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a></li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a> splits the input line by ‘|’ and kicks off the execution of each stage of the pipeline</dt>
+<dd><ul class="first last">
 <li>The standard pipe is initiated and managed by this method</li>
 <li>Redirect parsing is done for each stage</li>
 </ul>
-</div></blockquote>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>Each stage of the pipeline is processed and executed using the <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_cmd" title="pybash.command.pybash_runner.pybash_runner.run_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_cmd</span></code></a> method</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>Pre-processes the command (aliases) and input variables</li>
 <li><a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_cmd" title="pybash.command.pybash_runner.pybash_runner.run_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_cmd</span></code></a> will call <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd" title="pybash.command.pybash_runner.pybash_runner.run_shell_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_shell_cmd</span></code></a> or <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_python_cmd" title="pybash.command.pybash_runner.pybash_runner.run_python_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_python_cmd</span></code></a> as appropriate</li>
 </ul>
@@ -123,7 +121,7 @@ and kicks off the execution of each stage of the pipeline</p>
 </li>
 <li><dl class="first docutils">
 <dt><a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_pipeline" title="pybash.command.pybash_runner.pybash_runner.run_pipeline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_pipeline</span></code></a> gets the results of <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_shell_cmd" title="pybash.command.pybash_runner.pybash_runner.run_shell_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_shell_cmd</span></code></a> / <a class="reference internal" href="pybash.command.html#pybash.command.pybash_runner.pybash_runner.run_python_cmd" title="pybash.command.pybash_runner.pybash_runner.run_python_cmd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_python_cmd</span></code></a></dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>Outputs will be passed to the next stage in the pipeline</li>
 <li>If this is the last stage, any open file handles are closed and assignment to
 python variables is performed</li>

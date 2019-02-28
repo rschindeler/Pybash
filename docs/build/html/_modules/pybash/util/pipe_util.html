@@ -81,12 +81,11 @@
 <span class="sd">                   for python commands</span>
 
 <span class="sd">    Special cases for stdin, stdout, stderr:</span>
-<span class="sd">    1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value </span>
-<span class="sd">       of use_pipe.</span>
-<span class="sd">    2. Positive int: this denotes a redirect. </span>
-<span class="sd">       If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is &gt;= 0, then, std_pipe[i] is redirected</span>
-<span class="sd">       to the pipe or deque located at std_pipe[std_pipe[i]].</span>
-<span class="sd">       For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.</span>
+<span class="sd">        1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value of use_pipe).</span>
+<span class="sd">        2. Positive int: this denotes a redirect. </span>
+<span class="sd">           If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is &gt;= 0, then, std_pipe[i] is redirected</span>
+<span class="sd">           to the pipe or deque located at std_pipe[std_pipe[i]].</span>
+<span class="sd">           For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        tuple: Returns (stdin,stdout,stderr) which are all either file-like objects (open file, pipes), </span>

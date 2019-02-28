@@ -40,7 +40,7 @@ helper functions to ease the transition.
     find . - name "\*.yaml" | [s for s in to_list(@) if 'test' in s] | xargs cat > out.yaml
     dict_list = find . -name "\*.yaml" | [to_dict(from_file(f)) for f in to_list(@)] | [d for d in @ if 'test_key' in d]
 
-See :module:`pybash.util.pybash_helper` for details on the available helper functions.
+See :mod:`pybash.util.pybash_helper` for details on the available helper functions.
 
 When piping to a python stage, '@' is interpreted as the input variable from
 the previous stage. The following examples shows how this is done:

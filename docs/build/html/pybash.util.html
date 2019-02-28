@@ -219,16 +219,17 @@ for python commands</li>
 </tr>
 </tbody>
 </table>
-<p>Special cases for stdin, stdout, stderr:
-1. subprocess.PIPE: a new os.pipe or deque is created (depending on the value</p>
-<blockquote>
-<div>of use_pipe.</div></blockquote>
-<ol class="arabic simple" start="2">
+<dl class="docutils">
+<dt>Special cases for stdin, stdout, stderr:</dt>
+<dd><ol class="first last arabic simple">
+<li>subprocess.PIPE: a new os.pipe or deque is created (depending on the value of use_pipe).</li>
 <li>Positive int: this denotes a redirect.
 If std_pipe = (stdin,stdout,stderr) and std_pipe[i] is &gt;= 0, then, std_pipe[i] is redirected
 to the pipe or deque located at std_pipe[std_pipe[i]].
 For example: std_pipe = (file_a, file_b, 1), then stderr will be redirected to file_b.</li>
 </ol>
+</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -482,7 +483,10 @@ TODO: Add support for json</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String representation of input variable</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">String representation of input variable</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a>)</p>
 </td>
 </tr>
 </tbody>
